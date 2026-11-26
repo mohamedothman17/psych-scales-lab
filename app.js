@@ -573,6 +573,13 @@ VIEWS.home = el => {
   $('#hRules2').onclick = () => LEARN.open('rules12');
   $$('[data-go3]', el).forEach(b => b.onclick = () => go(b.dataset.go3));
   if (typeof MOTION !== 'undefined') { MOTION.hero($('.hx', el)); MOTION.journey($('.journey', el)); MOTION.magnetic(el); }
+  /* The journey map counts builder steps (BUILD lives in the lazy builder chunk): load it only when there are scales to count. */
+  if (typeof BUILD === 'undefined' && SCALES.list().length) needChunks(['clib', 'build']).then(() => {
+    const j = $('.journey', el); if (!el.isConnected || !j || !BUILD.bestSteps()) return;
+    j.outerHTML = journeyX(); const nj = $('.journey', el);
+    $$('[data-go3]', nj).forEach(b => b.onclick = () => go(b.dataset.go3)); $('#hRules2', nj).onclick = () => LEARN.open('rules12');
+    if (typeof MOTION !== 'undefined') MOTION.journey(nj);
+  }, () => { });
 };
 
 /* ===== Learn: path, lessons, interactive stepper, quizzes, practice, profile ===== */
