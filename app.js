@@ -415,6 +415,15 @@ const LOGO_SVG = `<svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradi
 const GUEST_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><circle cx="12" cy="9" r="3.6" fill="currentColor"/><path d="M5.2 19.2c1.3-3.1 3.9-4.7 6.8-4.7s5.5 1.6 6.8 4.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
 const avatarInner = nm => nm && nm.trim() ? esc(nm.trim()[0]) : GUEST_SVG;
 const VIEWS = {};
+/* Lazy chunks: route-specific code and lesson text load on first use (same pattern as laws.js). */
+const CHUNKS = {};
+function loadChunk(src) {
+  return CHUNKS[src] || (CHUNKS[src] = new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = src;
+    sc.onload = res; sc.onerror = () => { delete CHUNKS[src]; sc.parentNode && sc.parentNode.removeChild(sc); rej(new Error('load ' + src)); };
+    document.head.appendChild(sc);
+  }));
+}
 VIEWS.laws = el => {
   el.style.setProperty('--lw-accent', 'var(--violet)');
   const run = () => { if (el.isConnected) LAWS.render(el, { era: 5 }); };
@@ -491,7 +500,7 @@ function searchSheet() {
     q.oninput = () => {
       const k = q.value.trim(); if (k.length < 2) { out.innerHTML = '<p class="muted small">اكتب حرفين على الأقل.</p>'; return; }
       const hits = [];
-      LEARN.parts().forEach(p => p.sections.forEach((s, si) => { const t = LEARN.text(s); const i = t.indexOf(k); if (i >= 0 || s.title.includes(k)) hits.push({ p, si, s, snip: i >= 0 ? t.slice(Math.max(0, i - 50), i + k.length + 70) : '' }); }));
+      if (LEARN.ready()) LEARN.parts().forEach(p => p.sections.forEach((s, si) => { const t = LEARN.text(s); const i = t.indexOf(k); if (i >= 0 || s.title.includes(k)) hits.push({ p, si, s, snip: i >= 0 ? t.slice(Math.max(0, i - 50), i + k.length + 70) : '' }); }));
       const g = C.glossary.filter(x => x.ar.includes(k) || x.en.toLowerCase().includes(k.toLowerCase())).slice(0, 5);
       const labs = LABS.list.filter(l => l.t.includes(k) || l.d.includes(k)).slice(0, 4);
       out.innerHTML = labs.map(l => `<button class="linkcard" data-lab="${l.id}"><span class="ic">${ic('flask')}</span><span><b>${esc(l.t)}</b><span>معمل حسابي</span></span></button>`).join('') +
@@ -501,6 +510,7 @@ function searchSheet() {
       $$('[data-lab]', out).forEach(b => b.onclick = () => { close(); LABS.open(b.dataset.lab); });
     };
     q.oninput();
+    if (!LEARN.ready()) LEARN.ensure().then(() => { if (q.isConnected) q.oninput(); }, () => { });
   });
 }
 
@@ -574,6 +584,14 @@ const LEARN = (() => {
   const strip = h => h.replace(/<img[^>]*>/g, '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
   const text = s => s._t ?? (s._t = strip(s.html));
   const isLib = p => ['gloss', 'sch', 'refs', 'apx'].includes(p.key);
+  /* Section HTML lives in lessons.js and is attached on first need; the skeleton in index.html carries titles and hq (has quiz). */
+  let lessonsReady = false, lessonsP = null;
+  function ensureLessons() {
+    if (lessonsReady) return Promise.resolve();
+    return lessonsP || (lessonsP = loadChunk('lessons.js?v=fb0f982d5d').then(() => {
+      const H = window.LESSONS_HTML; PARTS.forEach(p => p.sections.forEach((s, j) => { s.html = H[p.key][j]; })); lessonsReady = true;
+    }, e => { lessonsP = null; throw e; }));
+  }
 
   /* ---- question pools ---- */
   C.bank.forEach((b, i) => b.id = 'b' + i);
@@ -604,7 +622,7 @@ const LEARN = (() => {
     }
     return pool[p.key] = g;
   }
-  const hasQuiz = p => poolFor(p).length >= 4;
+  const hasQuiz = p => lessonsReady ? poolFor(p).length >= 4 : !!p.hq;
   const readCount = p => p.sections.filter(s => S.read[s.id]).length;
   const partDone = p => hasQuiz(p) ? (S.quiz[p.key]?.best || 0) >= 0.6 && readCount(p) >= Math.ceil(p.sections.length / 2) : readCount(p) === p.sections.length;
   const progress = p => { const r = readCount(p) / p.sections.length; return hasQuiz(p) ? r * 0.5 + (S.quiz[p.key]?.best || 0) * 0.5 : r; };
@@ -614,6 +632,7 @@ const LEARN = (() => {
   /* ---- path view ---- */
   VIEWS.learn = el => {
     if (openKey) return renderLesson();
+    ensureLessons().catch(() => { });
     const np = next();
     el.innerHTML = `<div class="section-title"><h2>الدروس</h2><span class="muted small">${doneCount()} من ${total()} أجزاء مكتملة</span></div>` +
       ORDER.map(([u, sub, keys], ui) => `<section class="stack"><div class="unit-h"><span class="n">${ui === 0 ? '٠' : ui === ORDER.length - 1 ? ic('book') : ui}</span><div><b>${esc(u)}</b><small>${esc(sub)}</small></div></div>` +
@@ -624,6 +643,11 @@ const LEARN = (() => {
   function open(key, si) { openKey = key; openSec = si ?? null; if (location.hash === '#learn') renderLesson(); else location.hash = 'learn'; }
   function renderLesson() {
     const p = byKey(openKey); if (!p) return;
+    if (!lessonsReady) {
+      $('#view').innerHTML = '<div class="container" id="vc"><p class="muted">جارٍ تحميل الدرس…</p></div>';
+      ensureLessons().then(() => { if (openKey && current === 'learn') renderLesson(); }, () => { const c = $('#vc'); if (c && openKey && current === 'learn') c.innerHTML = '<p class="muted">تعذر تحميل الدرس. تحقق من الاتصال وحدّث الصفحة.</p>'; });
+      return;
+    }
     const el = $('#view'); el.innerHTML = '<div class="container" id="vc"></div>'; const c = $('#vc');
     c.innerHTML = `<button class="back" id="lBack">${ic('back')} كل الدروس</button>
       <header class="card lesson-head"><span class="chip blue">${esc(ORDER[p.unit][0])}</span><h1>${esc(p.title)}</h1>${p.en ? `<div class="muted small ltr" style="text-align:right">${esc(p.en)}</div>` : ''}
@@ -777,6 +801,7 @@ const LEARN = (() => {
     if (k === 'probs') return runQuiz({ qs: Array.from({ length: 6 }, genProblem), onEnd: r => { S.probs += r.ok; quest('prob', r.ok); } });
     if (k === 'scholars') return runQuiz({ qs: pick(C.scholars.filter(s => s.c), 8).map(qSch) });
     if (k === 'mistakes') { if (!S.miss.length) return toast('لا أخطاء محفوظة. أحسنت'); return runQuiz({ qs: shuffle(S.miss.map(m => m.q)).slice(0, 10).map(q => Object.assign({}, q, { opts: shuffle(q.opts) })) }); }
+    if (k === 'rapid' && !lessonsReady) return ensureLessons().then(() => practice('rapid'), () => toast('تعذر تحميل الأسئلة. تحقق من الاتصال.'));
     if (k === 'rapid') { const all = PARTS.flatMap(p => poolFor(p)); const more = () => pick(all, 20).map(g => g()); return runQuiz({ qs: more(), more, endless: true, timer: true, deadline: Date.now() + 60000 }); }
   }
   function genProblem() {
@@ -848,7 +873,7 @@ const LEARN = (() => {
   };
 
   const doneCount = () => learnParts().filter(partDone).length, total = () => learnParts().length;
-  return { parts: () => PARTS, text, open, next: () => { const p = next(); return { key: p.key, short: p.short }; }, doneCount, total, runQuiz, openOv, closeOv, renderLesson, isOpen: () => !!openKey, clearOpen: () => { openKey = null; } };
+  return { parts: () => PARTS, text, open, ensure: ensureLessons, ready: () => lessonsReady, next: () => { const p = next(); return { key: p.key, short: p.short }; }, doneCount, total, runQuiz, openOv, closeOv, renderLesson, isOpen: () => !!openKey, clearOpen: () => { openKey = null; } };
 })();
 
 /* ===== Labs (calculators) and formulas reference ===== */
