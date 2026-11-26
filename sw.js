@@ -1,21 +1,21 @@
 /* Offline support: network first, cached copy when offline. Only same-origin GET requests are cached. */
-const CACHE = 'psych-scales-lab-63ffb922';
+const CACHE = 'psych-scales-lab-5efae3d1';
 const CORE = [
  "./",
  "icon-192.png",
  "icon-512.png",
  "manifest.webmanifest",
- "firebase-config.js?v=907f9377c5",
+ "firebase-config.js?v=e2352a7279",
  "vendor/anim/gsap.min.js",
  "vendor/anim/ScrollTrigger.min.js",
  "vendor/anim/SplitText.min.js",
  "vendor/anim/MotionPathPlugin.min.js",
  "vendor/anim/lenis.min.js",
- "privacy.js?v=2298d6fa",
- "visits.js?v=20261120a",
- "app.js?v=5b11ffdaf8",
+ "privacy.js?v=2298d6faf6",
+ "visits.js?v=60e8c491af",
+ "app.js?v=05c0e950db",
  "style.css?v=907f9377c5",
- "laws.js?v=cca56bd5",
+ "laws.js?v=cca56bd5f2",
  "lessons.js?v=fb0f982d5d",
  "clib.js?v=e169db60df",
  "build.js?v=4028b84456",
@@ -25,7 +25,8 @@ const CORE = [
  "img/lesson-1.webp",
  "img/lesson-2.webp",
  "img/lesson-3.webp",
- "img/lesson-4.webp"
+ "img/lesson-4.webp",
+ "qr.js?v=6e6189e2b1"
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(CORE.map(u => c.add(u).catch(() => null)))).then(() => self.skipWaiting()));
