@@ -74,7 +74,7 @@
     ORDER.forEach(function (t, i) {
       var p = POS[t.id], f = fam(t.family), big = ev(t.evidence.status).level;
       s += '<a class="mth-star t-' + f.tone + '" href="#theories/t/' + t.id + '" data-id="' + t.id + '" aria-label="' + esc(t.title.ar + '، ' + t.evidence.status) + '">' +
-        '<g transform="translate(' + p[o] + ' ' + p[o + 1] + ')"><circle class="hit" r="' + (tall ? 27 : 30) + '"/><circle class="halo" r="' + (9 + big * 3) + '"/>' +
+        '<g transform="translate(' + p[o] + ' ' + p[o + 1] + ')"><circle class="hit" r="' + (tall ? 31 : 30) + '"/><circle class="halo" r="' + (9 + big * 3) + '"/>' +
         '<path class="pt" data-tw="' + (i % 5) + '" d="' + star(7 + big * 2) + '"/>' +
         '<text class="no" y="-' + (16 + big * 2) + '" text-anchor="middle">' + t.no + '</text>' +
         '<text class="nm" y="' + (30 + big * 2) + '" text-anchor="middle">' + esc(SHORT[t.id]) + '</text></g></a>';
