@@ -24,7 +24,7 @@
   /* ---------- store ---------- */
   var S = load();
   function load() {
-    var d = { role: '', profile: {}, projects: [], kids: [] };
+    var d = { role: '', profile: {}, projects: [], kids: [], mods: {} };
     try { var j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j && typeof j === 'object') { for (var k in d) if (j[k] != null) d[k] = j[k]; } } catch (e) {}
     if (!Array.isArray(d.projects)) d.projects = [];
     if (!Array.isArray(d.kids)) d.kids = [];
@@ -95,6 +95,34 @@
     ['family', 'أولادي', ['parent', 'specialist'], 'أولادي'],
     ['labs', 'المعامل', null, 'المعامل']
   ];
+  /* Sections that live in their own files (hub/mod-<name>.js + .css) and load on first visit.
+     A section file calls Hub.register(name, function (main, a, b) { ... }). Flip `ready` once the file ships. */
+  var MODS = {
+    theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: false },
+    kids: { title: 'ألعاب وأنشطة الأطفال', short: 'الألعاب', say: 'ذاكرة، انتباه، استدلال، مرونة، إبداع', roles: ['parent', 'specialist'], ready: false },
+    decide: { title: 'بحوث العمليات والقرار', short: 'القرار', say: 'توزيع العينة، الميزانية مقابل القوة، مقارنة البدائل', roles: ['researcher', 'student', 'specialist'], ready: false },
+    explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: false }
+  };
+  Object.keys(MODS).forEach(function (k) { if (MODS[k].ready) NAV.splice(NAV.length - 1, 0, [k, MODS[k].title, MODS[k].roles, MODS[k].short]); });
+  var MOD_VIEWS = {}, MOD_LOADING = {};
+  function loadMod(name, done) {
+    if (MOD_VIEWS[name]) return done(true);
+    if (MOD_LOADING[name]) { MOD_LOADING[name].push(done); return; }
+    MOD_LOADING[name] = [done];
+    function end(ok) { var q = MOD_LOADING[name] || []; delete MOD_LOADING[name]; q.forEach(function (f) { f(ok && !!MOD_VIEWS[name]); }); }
+    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'mod-' + name + '.css'; document.head.appendChild(l);
+    var sc = document.createElement('script'); sc.src = 'mod-' + name + '.js'; sc.onload = function () { end(true); }; sc.onerror = function () { end(false); };
+    document.head.appendChild(sc);
+  }
+  function modView(name, a, b) {
+    var m = MODS[name];
+    main.innerHTML = '<header class="head"><h1>' + esc(m.title) + '</h1><p class="lead" role="status">جارٍ التحميل…</p></header>';
+    loadMod(name, function (ok) {
+      if ((location.hash || '').slice(1).split('/')[0] !== name) return;
+      if (ok) { MOD_VIEWS[name](main, a, b); stage(name); }
+      else main.innerHTML = '<header class="head"><h1>' + esc(m.title) + '</h1><p class="lead">القسم ده لسه بنجهّزه، أو النت قطع. جرّب تاني بعد شوية.</p><p><a class="btn" href="#home">رجوع للرئيسية</a></p></header>';
+    });
+  }
   var TAB_MAX = 5;
   function drawNav(route) {
     var items = NAV.filter(function (n) { return !n[2] || !S.role || n[2].indexOf(S.role) > -1; });
@@ -370,13 +398,11 @@
       '<a class="tile block lilac lab" href="' + LABS.stats + '">' + LAB_ART.stats + '<span class="lab-name">معمل الإحصاء النفسي</span><span class="lab-say">اختبارات، حجم أثر، وقوة</span></a></div>';
   }
   function soonTile() {
-    return '<section class="soon" data-d="420"><h2>قريباً</h2><ul>' + [
-      ['مكتبة النظريات النفسية', 'كل نظرية بأدلتها ونقدها وأنشطتها'],
-      ['ألعاب وأنشطة الأطفال', 'ذاكرة، انتباه، استدلال، مرونة، إبداع'],
-      ['بحوث العمليات واتخاذ القرار', 'توزيع العينة، الميزانية مقابل القوة، الجدولة'],
-      ['مستكشف الأدبيات والفرص', 'أبحاث بروابطها، ومنح متراجعة بتاريخها'],
-      ['التوجيه المهني والبورتفوليو', 'ميولك، مساراتك، وملف إنجازاتك']
-    ].map(function (c) { return '<li><strong>' + c[0] + '</strong><small>' + c[1] + '</small></li>'; }).join('') + '</ul></section>';
+    var later = Object.keys(MODS).filter(function (k) { return !MODS[k].ready; }).map(function (k) { return [MODS[k].title, MODS[k].say]; });
+    later.push(['التوجيه المهني والبورتفوليو', 'ميولك، مساراتك، وملف إنجازاتك']);
+    var open = Object.keys(MODS).filter(function (k) { var m = MODS[k]; return m.ready && (!m.roles || !S.role || m.roles.indexOf(S.role) > -1); });
+    return (open.length ? '<section class="mods" data-d="380"><h2>أقسام المنصة</h2><ul>' + open.map(function (k) { return '<li><a href="#' + k + '"><strong>' + MODS[k].title + '</strong><small>' + MODS[k].say + '</small></a></li>'; }).join('') + '</ul></section>' : '') +
+      '<section class="soon" data-d="420"><h2>قريباً</h2><ul>' + later.map(function (c) { return '<li><strong>' + c[0] + '</strong><small>' + c[1] + '</small></li>'; }).join('') + '</ul></section>';
   }
 
   /* The welcome: five scroll scenes for a first visit. Static and complete as markup; motion.js brings it to life. */
@@ -686,10 +712,10 @@
   /* ---------- router ---------- */
   function route() {
     var parts = (location.hash || '#home').slice(1).split('/'), r = parts[0];
-    if (!V[r]) r = 'home';
+    if (!V[r] && !MODS[r]) r = 'home';
     if (window.HubMotion) window.HubMotion.stop();
     document.body.classList.remove('is-intro');
-    V[r](parts[1], parts[2]);
+    if (MODS[r]) modView(r, parts[1], parts[2]); else V[r](parts[1], parts[2]);
     drawNav(r === 'project' ? 'projects' : r);
     document.title = BRAND + ' — منصة البحث وتنمية القدرات';
     if (route.ready) { main.focus({ preventScroll: true }); window.scrollTo(0, 0); }
@@ -712,6 +738,13 @@
     if (route.ready && document.startViewTransition && !calm()) { try { var vt = document.startViewTransition(route), quiet = function () {}; vt.ready.catch(quiet); vt.finished.catch(quiet); vt.updateCallbackDone.catch(quiet); return; } catch (e) {} }
     route();
   }
+  /* What a section file may use. Section data lives under S.mods[name] and is saved with the rest. */
+  window.Hub = {
+    register: function (name, fn) { if (MODS[name]) MOD_VIEWS[name] = fn; },
+    data: function (name) { if (!S.mods || typeof S.mods !== 'object') S.mods = {}; if (!S.mods[name]) S.mods[name] = {}; return S.mods[name]; },
+    state: function () { return S; }, save: save, esc: esc, $: $, $$: $$, toast: toast, ic: ic, field: field, sel: sel, opts: opts,
+    uid: uid, today: today, plural: plural, calm: calm, labs: LABS, go: function (hash) { location.hash = hash; }
+  };
   window.addEventListener('hashchange', go);
   route();
 })();
