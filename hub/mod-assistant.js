@@ -7,7 +7,8 @@
   var H = window.Hub; if (!H) return;
   var esc = H.esc, $ = H.$, $$ = H.$$, ic = H.ic, C = null;
   var KEY_STORE = 'hub-assistant-key', DEPS = ['data/assistant-config.js', 'data/assistant-kb.js', 'data/assistant-prompt.js', 'data/assistant-core.js'];
-  var loading = null, ui = null, sheet = null, busy = false, abort = null, waiting = null;
+  var loading = null, ui = null, sheet = null, busy = false, abort = null, waiting = null, blockedAt = 0;
+  document.addEventListener('securitypolicyviolation', function (e) { if (/connect-src/.test(e.violatedDirective || e.effectiveDirective || '')) blockedAt = Date.now(); });
 
   function ready(fn) {
     if (C) return fn();
@@ -71,24 +72,26 @@
   var STOP = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="5.500" y="5.500" width="9" height="9" rx="1.500"/></svg>';
 
   /* Text to safe HTML: escapes everything, keeps line breaks, **bold**, "- " lists, and isolates Latin/number runs for bidi. */
-  function inline(s) {
+  var TEL = /^(16328|08008880700|16000|123|122)$/;
+  function inline(s, care) {
     var out = '', re = /\*\*([^*]+)\*\*|([A-Za-zηχα²][A-Za-z0-9ηχα²_\-]*(?:[ ]?[(=<>≤≥+×,.:\/%][ ]?[A-Za-z0-9ηχα²_.\-()%]+)*)|(\d+(?:\.\d+)?%?)/g, last = 0, m;
     while ((m = re.exec(s))) {
       out += esc(s.slice(last, m.index));
       if (m[1] != null) out += '<strong>' + inline(m[1]) + '</strong>';
+      else if (care && m[3] && TEL.test(m[3])) out += '<a class="massistant-tel num" dir="ltr" href="tel:' + m[3] + '">' + m[3] + '</a>';
       else out += '<bdi dir="ltr"' + (m[3] ? ' class="num"' : '') + '>' + esc(m[0]) + '</bdi>';
       last = m.index + m[0].length;
     }
     return out + esc(s.slice(last));
   }
-  function fmt(text) {
+  function fmt(text, care) {
     var lines = String(text || '').replace(/\r/g, '').split('\n'), h = '', list = false, para = [];
     function flush() { if (para.length) { h += '<p>' + para.join('<br>') + '</p>'; para = []; } }
     lines.forEach(function (l) {
       var m = /^\s*[-•]\s+(.*)$/.exec(l);
-      if (m) { flush(); if (!list) { h += '<ul>'; list = true; } h += '<li>' + inline(m[1]) + '</li>'; return; }
+      if (m) { flush(); if (!list) { h += '<ul>'; list = true; } h += '<li>' + inline(m[1], care) + '</li>'; return; }
       if (list) { h += '</ul>'; list = false; }
-      if (!l.trim()) flush(); else para.push(inline(l));
+      if (!l.trim()) flush(); else para.push(inline(l, care));
     });
     if (list) h += '</ul>'; flush();
     return h;
@@ -169,7 +172,7 @@
     box.hidden = false;
     var role = ui.tab || H.state().role || 'researcher', list = C.starters(role);
     box.innerHTML = '<div class="massistant-hero-head">' + sigil('big') +
-      '<div><p class="mega massistant-mega">قولّي واقف فين، <em>ونكمّل سوا</em>.</p>' +
+      '<div><p class="mega massistant-mega">قولّي واقف فين، <em>ونكمّل سوا</em></p>' +
       '<p class="lead">' + (mode() === 'offline' ? 'شغّال دلوقتي من غير نت: بجاوب من قاعدة معرفة مكتوبة بعناية، بحسب، وبنفّذ جوه المنصة بعد ما تأكّد. لو معرفش هقولك.' : 'موصّل بنموذج لغوي. بيقرا مشاريعك بإذنك، وأي تغيير بيتعرض عليك الأول.') + '</p></div></div>' +
       '<div class="massistant-roles" role="tablist" aria-label="اقتراحات حسب الدور">' + Object.keys(C.roles).map(function (k) { return '<button type="button" role="tab" data-tab="' + k + '" aria-selected="' + (k === role) + '"' + (k === role ? ' class="on"' : '') + '>' + C.roles[k] + '</button>'; }).join('') + '</div>' +
       '<div class="massistant-starts">' + list.map(function (q, i) {
@@ -181,7 +184,7 @@
     h = '<div class="' + cls + '" data-id="' + m.id + '" data-state="done"' + (m.src ? ' data-src="' + esc(m.src) + '"' : '') + '>';
     if (m.r !== 'u') h += '<span class="massistant-who">' + (m.src === 'safety' ? 'مهم' : 'Instinct') + '</span>';
     else h += '<span class="sr">إنت: </span>';
-    h += '<div class="massistant-text">' + (m.t ? fmt(m.t) : '') + '</div>';
+    h += '<div class="massistant-text">' + (m.t ? fmt(m.t, m.src === 'safety') : '') + '</div>';
     if (m.confirm) h += confirmHtml(m);
     if (m.links && m.links.length) h += '<p class="massistant-links">' + m.links.map(function (l) { return '<button type="button" class="btn" data-go="' + esc(l.hash) + '">' + esc(l.label) + ic('fwd') + '</button>'; }).join('') + '</p>';
     if (m.flags && m.flags.length) h += '<div class="massistant-flags"><p class="massistant-flags-t">راجع قبل ما تعتمد</p><ul>' + m.flags.map(function (f) { return '<li>' + inline(f) + '</li>'; }).join('') + '</ul></div>';
@@ -262,7 +265,7 @@
       if (!node.isConnected) return done && done();
       i += step; box.textContent = full.slice(0, i);
       if (i < full.length) { scrollEnd(true); return window.setTimeout(tick, 16); }
-      box.innerHTML = fmt(full); node.setAttribute('data-state', 'done'); scrollEnd(); if (done) done();
+      box.innerHTML = fmt(full, m.src === 'safety'); node.setAttribute('data-state', 'done'); scrollEnd(); if (done) done();
     })();
   }
   function fromReply(r) { return { r: 'a', t: r.text, chips: r.chips || [], links: r.links || [], src: r.src || '' }; }
@@ -350,6 +353,7 @@
       if (waiting) waiting = null;
       if (e && e.name === 'AbortError') return say({ r: 'a', t: (buf.trim() ? buf.trim() + '\n\n' : '') + 'وقّفت الرد زي ما طلبت.', src: 'model' });
       var code = e && e.code || 'unknown';
+      if (code === 'network' && Date.now() - blockedAt < 4000) code = 'blocked';
       say({ r: 'a', t: (C.errors[code] || C.errors.unknown) + '\n\nهجاوبك دلوقتي من الوضع بدون اتصال:', err: code, src: 'error' }, function () { offline(text); });
     }).then(function () { abort = null; setBusy(false); status(''); });
   }
