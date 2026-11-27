@@ -15,7 +15,7 @@
   function applyTheme(force) {
     var t = force || storedTheme() || (darkMq && darkMq.matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', t);
-    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t === 'dark' ? '#0e0b1f' : '#f3f5fa');
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t === 'dark' ? '#0c032c' : '#eae7fe');
     return t;
   }
   var theme = applyTheme();
@@ -84,6 +84,7 @@
     trash: '<path d="M4 6h12M8 6V4.200h4V6M5.500 6l.7 10h7.600l.7-10M8.500 9v4.500M11.500 9v4.500"/>',
     clock: '<circle cx="10" cy="10" r="6.500"/><path d="M10 6.500V10l2.300 1.500"/>'
   };
+  ICONS.theories = ICONS.library; ICONS.kids = ICONS.games; ICONS.decide = ICONS.ops; ICONS.explore = ICONS.opps; ICONS.assistant = ICONS.guide;
   function ic(name, cls) { return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' + (ICONS[name] || '') + '</svg>'; }
 
   /* ---------- roles & nav ---------- */
@@ -98,7 +99,7 @@
   /* Sections that live in their own files (hub/mod-<name>.js + .css) and load on first visit.
      A section file calls Hub.register(name, function (main, a, b) { ... }). Flip `ready` once the file ships. */
   var MODS = {
-    theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: false },
+    theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: true },
     kids: { title: 'ألعاب وأنشطة الأطفال', short: 'الألعاب', say: 'ذاكرة، انتباه، استدلال، مرونة، إبداع', roles: ['parent', 'specialist'], ready: false },
     decide: { title: 'بحوث العمليات والقرار', short: 'القرار', say: 'توزيع العينة، الميزانية مقابل القوة، مقارنة البدائل', roles: ['researcher', 'student', 'specialist'], ready: false },
     explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: false },
@@ -189,10 +190,19 @@
     for (i = 0; i < 5; i++) rays += 'M' + W / 2 + ' ' + cy + 'L' + f1(W * (0.04 + i * 0.23)) + ' 0';
     h += '<g class="sky-grid"><circle cx="' + W / 2 + '" cy="' + cy + '" r="' + f1(H * 3.3) + '"/><circle cx="' + W / 2 + '" cy="' + cy + '" r="' + f1(H * 3.55) + '"/><circle cx="' + W / 2 + '" cy="' + cy + '" r="' + f1(H * 3.8) + '"/><path d="' + rays + '"/></g>';
     var r = seeded(mobile ? 7 : 11), dots = '';
-    for (i = 0; i < (mobile ? 30 : 60); i++) dots += '<circle cx="' + f1(r() * W) + '" cy="' + f1(r() * H) + '" r="' + (r() < 0.2 ? 1.1 : 0.6) + '" opacity="' + f1(0.25 + r() * 0.5) + '"/>';
+    for (i = 0; i < (mobile ? 30 : 60); i++) dots += '<circle class="tw' + (i % 4) + '" cx="' + f1(r() * W) + '" cy="' + f1(r() * H) + '" r="' + (r() < 0.2 ? 1.1 : 0.6) + '" opacity="' + f1(0.25 + r() * 0.5) + '"/>';
     h += '<g class="sky-field">' + dots + '</g>';
     for (i = 0; i < pts.length - 1; i++) {
       h += '<path class="lk ' + (done[i] && done[i + 1] ? 'link-done" pathLength="1' : (done[i] && i + 1 === nx) ? 'link-next' : 'link-todo') + '" data-d="' + (520 + i * 110) + '" d="M' + pts[i][0] + ' ' + pts[i][1] + 'L' + pts[i + 1][0] + ' ' + pts[i + 1][1] + '"/>';
+    }
+    var lit = '', run = 0;
+    for (i = 0; i < pts.length; i++) { if (done[i] && (i === 0 || done[i - 1])) { lit += (run ? 'L' : 'M') + pts[i][0] + ' ' + pts[i][1]; run++; } else if (i > 0 && !done[i]) break; }
+    if (run > 1) h += '<path class="comet" pathLength="100" d="' + lit + '"/>';
+    function wrap(k, body, state) {
+      if (!p) return body;
+      var tx = pts[k][0], ty = pts[k][1] - (mobile ? 30 : 40), tw = state.length * 7.5 + 22;
+      return '<a class="sta" href="#project/' + p.id + '/' + STEPS[k][0] + '" aria-label="' + esc(STEPS[k][1] + ': ' + state) + '">' + body +
+        '<g class="tip" aria-hidden="true"><rect x="' + f1(tx - tw / 2) + '" y="' + (ty - 15) + '" width="' + f1(tw) + '" height="22" rx="11"/><text x="' + tx + '" y="' + ty + '">' + state + '</text></g></a>';
     }
     STEPS.forEach(function (s, k) {
       var x = pts[k][0], y = pts[k][1], isNext = k === nx;
@@ -201,13 +211,13 @@
       var num = mobile ? '' : '<text class="n" x="' + x + '" y="' + (up ? y + (isNext ? 58 : 30) : y - (isNext ? 50 : 22)) + '">' + pad2(k + 1) + '</text>';
       if (isNext) {
         var a = mobile ? [38, 26, 18, 11, 18, 44] : [58, 40, 27, 16, 26, 62];
-        h += '<g class="st next" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + a[0] + '" fill="url(#glow)"/><circle class="halo h3" cx="' + x + '" cy="' + y + '" r="' + a[1] + '"/><circle class="halo h2" cx="' + x + '" cy="' + y + '" r="' + a[2] + '"/><circle class="halo h1" cx="' + x + '" cy="' + y + '" r="' + a[3] + '"/>' +
-          '<use href="#star4" x="' + (x - a[4] / 2) + '" y="' + (y - a[4] / 2) + '" width="' + a[4] + '" height="' + a[4] + '"/>' + num + lab(a[5]) + '</g>';
+        h += wrap(k, '<g class="st next" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + a[0] + '" fill="url(#glow)"/><circle class="halo h3" cx="' + x + '" cy="' + y + '" r="' + a[1] + '"/><circle class="halo h2" cx="' + x + '" cy="' + y + '" r="' + a[2] + '"/><circle class="halo h1" cx="' + x + '" cy="' + y + '" r="' + a[3] + '"/>' +
+          '<use href="#star4" x="' + (x - a[4] / 2) + '" y="' + (y - a[4] / 2) + '" width="' + a[4] + '" height="' + a[4] + '"/>' + num + lab(a[5]) + '</g>', 'الخطوة الجاية');
       } else if (done[k]) {
         var z = mobile ? 15 : 19;
-        h += '<g class="st done" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + z + '" fill="url(#glowS)"/><use href="#star4" x="' + (x - z / 2) + '" y="' + (y - z / 2) + '" width="' + z + '" height="' + z + '"/>' + num + lab(mobile ? 27 : 31) + '</g>';
+        h += wrap(k, '<g class="st done" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + z + '" fill="url(#glowS)"/><use href="#star4" x="' + (x - z / 2) + '" y="' + (y - z / 2) + '" width="' + z + '" height="' + z + '"/>' + num + lab(mobile ? 27 : 31) + '</g>', 'مكتمل');
       } else {
-        h += '<g class="st todo" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + (mobile ? 3.6 : 4.5) + '"/>' + num + lab(mobile ? 24 : 28) + '</g>';
+        h += wrap(k, '<g class="st todo" data-d="' + (460 + k * 110) + '"><circle class="hit" cx="' + x + '" cy="' + y + '" r="16"/><circle cx="' + x + '" cy="' + y + '" r="' + (mobile ? 3.6 : 4.5) + '"/>' + num + lab(mobile ? 24 : 28) + '</g>', 'ناقص');
       }
     });
     return h + '</svg>';
@@ -292,12 +302,19 @@
     }).join('') + '</div>';
   }
   function bindRoles() {
-    $$('[data-role]', main).forEach(function (b) { b.addEventListener('click', function () { S.role = b.getAttribute('data-role'); save(); goHome(); }); });
+    $$('[data-role]', main).forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        S.role = b.getAttribute('data-role'); save();
+        var at = location.hash;
+        if (window.HubMotion && window.HubMotion.flood && !calm()) window.HubMotion.flood(b, e, function () { if (location.hash !== at) return; if ((at || '#home') === '#home') route(); else location.hash = '#home'; });
+        else goHome();
+      });
+    });
   }
   function goHome() { if ((location.hash || '#home') === '#home') go(); else location.hash = '#home'; }
 
   V.role = function () {
-    main.innerHTML = '<header class="head"><h1 class="mega">إنت مين؟</h1><p class="lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p></header>' + roleChoices();
+    main.innerHTML = '<header class="head"><h1 class="mega" data-reveal="words">إنت مين؟</h1><p class="lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p></header>' + roleChoices();
     bindRoles();
   };
 
@@ -316,11 +333,11 @@
     return TEXT[k][0][1] + ': ' + TEXT[k][0][2];
   }
   function skyTile(p) {
-    var h = '<section class="tile sky" aria-labelledby="sky-t" data-d="0"><div class="sky-ros">' + rosette(p, false) + '</div><div class="sky-in">';
+    var h = '<section class="tile sky" aria-labelledby="sky-t" data-d="0" data-glow><div class="sky-ring" aria-hidden="true"></div><div class="sky-ros">' + rosette(p, false) + '</div><div class="sky-in">';
     if (p) {
       var n = progress(p), nx = null;
       STEPS.some(function (s) { if (!stepDone(p, s[0])) { nx = s; return true; } return false; });
-      h += '<div class="sky-head"><p class="sky-kicker">آخر مشروع اشتغلت عليه · ' + fmtDate(p.updated) + '</p><h2 id="sky-t">' + esc(p.title || 'مشروع من غير عنوان') + '</h2><p class="sky-count num">' + n + ' من ' + STEPS.length + ' أجزاء مكتملة</p></div>' +
+      h += '<div class="sky-head"><p class="sky-kicker">آخر مشروع اشتغلت عليه · ' + fmtDate(p.updated) + '</p><h2 id="sky-t">' + esc(p.title || 'مشروع من غير عنوان') + '</h2><p class="sky-count num"><span data-count="' + n + '">' + n + '</span> من ' + STEPS.length + ' أجزاء مكتملة</p></div>' +
         starChart(p, false) + starChart(p, true) +
         '<div class="sky-foot"><p class="sky-next">' + (nx ? '<span class="sky-label">الخطوة الجاية</span><strong>' + nx[1] + '</strong><span class="sky-hint">' + esc(stepHint(nx[0])) + '</span>' : '<span class="sky-label">اكتملت</span><span class="sky-hint">كل الأجزاء العشرة مكتوبة. راجعها مع مشرفك واطبع نسخة.</span>') + '</p>' +
         '<div class="row"><a class="btn onsky" href="#project/' + p.id + '">افتح المشروع</a>' + (nx ? '<a class="btn primary mag" href="#project/' + p.id + '/' + nx[0] + '">كمّل: ' + nx[1] + '</a>' : '') + '</div></div>';
@@ -402,7 +419,8 @@
     var later = Object.keys(MODS).filter(function (k) { return !MODS[k].ready; }).map(function (k) { return [MODS[k].title, MODS[k].say]; });
     later.push(['التوجيه المهني والبورتفوليو', 'ميولك، مساراتك، وملف إنجازاتك']);
     var open = Object.keys(MODS).filter(function (k) { var m = MODS[k]; return m.ready && (!m.roles || !S.role || m.roles.indexOf(S.role) > -1); });
-    return (open.length ? '<section class="mods" data-d="380"><h2>أقسام المنصة</h2><ul>' + open.map(function (k) { return '<li><a href="#' + k + '"><strong>' + MODS[k].title + '</strong><small>' + MODS[k].say + '</small></a></li>'; }).join('') + '</ul></section>' : '') +
+    var look = { theories: ['violet', 'rosette'], kids: ['mint', 'toys'], decide: ['coral', 'rings'], explore: ['night', 'star'], assistant: ['sun', 'star'] };
+    return (open.length ? '<section class="mods" data-d="380"><h2>أقسام المنصة</h2><ul>' + open.map(function (k, i) { var lk = look[k] || [['lilac', 'sun', 'coral', 'violet'][i % 4], ['star', 'rosette', 'rings'][i % 3]]; return '<li><a class="mod m-' + lk[0] + '" href="#' + k + '" data-glow><span class="mod-art">' + motif(lk[1]) + '</span><strong>' + MODS[k].title + '</strong><small>' + MODS[k].say + '</small></a></li>'; }).join('') + '</ul></section>' : '') +
       '<section class="soon" data-d="420"><h2>قريباً</h2><ul>' + later.map(function (c) { return '<li><strong>' + c[0] + '</strong><small>' + c[1] + '</small></li>'; }).join('') + '</ul></section>';
   }
 
@@ -411,7 +429,8 @@
   function morphStage() {
     var g = girih(1.5), r = seeded(23), i, h = '<svg class="morph" id="morph" viewBox="-230 -230 460 460" aria-hidden="true" focusable="false">';
     h += '<g class="m-rings">' + [[206, 0, 0, 'a'], [158, -6, 8, 'b'], [112, -12, 16, 'c'], [70, -18, 24, 'd']].map(function (c) { return '<circle class="m-ring ' + c[3] + '" cx="' + c[1] + '" cy="' + c[2] + '" r="' + c[0] + '"/>'; }).join('') + '</g>';
-    h += '<g class="m-ros"><polygon class="m-frame" points="' + g.frame.join(' ') + '"/>' + g.gaps.map(function (p) { return '<polygon class="m-gap" points="' + p + '"/>'; }).join('') + g.petals.map(function (p, k) { return '<polygon class="m-petal' + (k === 6 ? ' next' : '') + '" points="' + p + '"/>'; }).join('') + '<polygon class="m-core" points="' + g.star.join(' ') + '"/></g>';
+    h += '<g class="m-ripples">' + [0, 1, 2].map(function (k) { return '<circle class="m-ripple" cx="0" cy="0" r="' + (150 + k * 30) + '"/>'; }).join('') + '</g>';
+    h += '<g class="m-ros"><polygon class="m-frame" pathLength="1" points="' + g.frame.join(' ') + '"/>' + g.petals.map(function (p) { return '<polygon class="m-out" pathLength="1" points="' + p + '"/>'; }).join('') + g.gaps.map(function (p) { return '<polygon class="m-gap" points="' + p + '"/>'; }).join('') + g.petals.map(function (p, k) { return '<polygon class="m-petal c' + (k % 5) + '" points="' + p + '"/>'; }).join('') + '<polygon class="m-core" points="' + g.star.join(' ') + '"/></g>';
     var scatter = [], line = '';
     var sx = [176, 118, 150, 60, 22, -40, -96, -70, -150, -190], sy = [-150, -60, 70, -120, 30, 150, -20, -170, 110, -70];
     for (i = 0; i < 10; i++) scatter.push([f1(sx[i] + (r() - 0.5) * 24), f1(sy[i] + (r() - 0.5) * 24)]);
@@ -423,18 +442,22 @@
     }
     return h + '</g></svg>';
   }
+  function marquee(rev) {
+    var one = QUESTIONS.map(function (t) { return '<span class="mq-i">' + t + '</span><svg class="mq-s" viewBox="-10 -10 20 20"><use href="#star4" x="-10" y="-10" width="20" height="20"/></svg>'; }).join('');
+    return '<div class="marquee' + (rev ? ' rev' : '') + '" aria-hidden="true"><div class="marquee-in">' + one + one + '</div></div>';
+  }
   function welcome() {
     var ch = [
       ['نجوم', 'بتكتشف اللي عندك', [0, 1], 'star'],
       ['زخرفة', 'بتربطه في بناء واحد', [2, 3], 'rosette'],
       ['حلقات', 'وبيكبر بالممارسة', [4], 'rings']
     ];
-    return '<div class="intro" id="intro"><canvas class="intro-sky" id="introSky" aria-hidden="true"></canvas>' +
+    return '<div class="intro" id="intro"><canvas class="aurora intro-aurora" data-aurora aria-hidden="true"></canvas><canvas class="intro-sky" id="introSky" aria-hidden="true"></canvas>' +
       '<section class="scene s1"><h1 class="s1-title"><span class="s1-brand">' + esc(BRAND) + '</span><span class="s1-line">من القدرة</span> <span class="s1-line">للإنجاز</span></h1>' +
       '<p class="s1-lead">منصة واحدة للباحث والأخصائي وولي الأمر. بتمشي معاك من أول سؤال لحد نتيجة تقدر تثبتها.</p><p class="s1-cue" aria-hidden="true"><span>انزل</span><i></i></p></section>' +
-      '<div class="story"><div class="stage">' + morphStage() + '</div>' + ch.map(function (c, i) {
-        return '<section class="scene ch ch' + (i + 1) + '"><div class="ch-in"><div class="ch-glyph rv">' + motif(c[3]) + '</div><p class="ch-no num rv">' + pad2(i + 1) + '</p><h2 class="ch-word rv">' + c[0] + '</h2><p class="ch-say rv">' + c[1] + '</p><ol class="ch-q">' + c[2].map(function (q) { return '<li class="rv"><span class="num">' + pad2(q + 1) + '</span>' + QUESTIONS[q] + '</li>'; }).join('') + '</ol></div></section>';
-      }).join('') + '</div>' +
+      marquee(false) + '<div class="story"><div class="stage">' + morphStage() + '</div>' + ch.map(function (c, i) {
+        return '<section class="scene ch ch' + (i + 1) + '"><div class="ch-in"><div class="ch-glyph rv">' + motif(c[3]) + '</div><p class="ch-no num rv">' + pad2(i + 1) + '</p><h2 class="ch-word rv"><span class="wm"><span>' + c[0] + '</span></span></h2><p class="ch-say rv">' + c[1] + '</p><ol class="ch-q">' + c[2].map(function (q) { return '<li class="rv"><span class="num">' + pad2(q + 1) + '</span>' + QUESTIONS[q] + '</li>'; }).join('') + '</ol></div></section>';
+      }).join('') + '</div>' + marquee(true) +
       '<section class="scene s5" id="choose"><h2 class="s5-title">إنت مين؟</h2><p class="s5-lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p>' + roleChoices() + '</section></div>';
   }
   function introSeen() { try { return localStorage.getItem(INTRO_KEY) === '1'; } catch (e) { return introSeen.mem; } }
@@ -461,7 +484,7 @@
       t = left ? 'فاضل لك <em class="num">' + plural(left, 'جزء واحد', 'جزئين', 'أجزاء', 'جزء') + '</em> وتكمّل خطة بحثك' : 'خطة بحثك <em>اكتملت</em>';
       lead = 'عندك ' + plural(S.projects.length, 'مشروع واحد', 'مشروعين', 'مشاريع', 'مشروع') + ' على الجهاز ده.';
     } else { t = 'ابدأ مشروعك <em>البحثي الأول</em>'; lead = 'هنمشي معاك خطوة خطوة، من السؤال لخطة التحليل.'; }
-    h += '<header class="head dash-head"><h1 class="mega">' + t + '</h1><p class="lead">' + lead + '</p>' + (r ? '' : '<p class="row dash-cta"><a class="btn primary big mag" href="#role">ابدأ: اختار دورك</a><button class="btn" type="button" id="replayIntro">شوف المقدمة</button></p>') + '</header>';
+    h += '<header class="head dash-head"><canvas class="aurora" data-aurora aria-hidden="true"></canvas><h1 class="mega" data-reveal="words">' + t + '</h1><p class="lead">' + lead + '</p>' + (r ? '' : '<p class="row dash-cta"><a class="btn primary big mag" href="#role">ابدأ: اختار دورك</a><button class="btn" type="button" id="replayIntro">شوف المقدمة</button></p>') + '</header>';
     h += '<div class="bento b-' + (r || 'guest') + '">' + (works ? skyTile(p) + guideTile(p) + skillsTile() : '') + (kids ? kidsTile(r) : '') + labsTile() + soonTile() + '</div>';
     main.innerHTML = h;
     var nb = $('#homeNew'); if (nb) nb.addEventListener('click', newProject);
@@ -469,7 +492,7 @@
   };
 
   V.labs = function () {
-    main.innerHTML = '<header class="head"><h1 class="mega">المعامل</h1><p class="lead">الموقعين الأصليين شغالين زي ما هم. افتح المعمل اللي محتاجه.</p></header><div class="lab-grid">' +
+    main.innerHTML = '<header class="head"><h1 class="mega" data-reveal="words">المعامل</h1><p class="lead">الموقعين الأصليين شغالين زي ما هم. افتح المعمل اللي محتاجه.</p></header><div class="lab-grid">' +
       '<a class="tile block coral lab big" data-d="0" href="' + LABS.scales + '">' + LAB_ART.measure + '<span class="lab-name">معمل القياس النفسي</span><span class="lab-say">بناء المقاييس، الثبات والصدق، تحليل البنود، بنك المقاييس، ووضع الامتحان.</span><span class="go">افتح المعمل</span></a>' +
       '<a class="tile block lilac lab big" data-d="90" href="' + LABS.stats + '">' + LAB_ART.stats + '<span class="lab-name">معمل الإحصاء النفسي</span><span class="lab-say">الاختبارات الإحصائية، حجم العينة والقوة، قراءة مخرجات SPSS، وكتابة النتايج.</span><span class="go">افتح المعمل</span></a></div>';
   };
@@ -542,6 +565,7 @@
     }).join('') + '</div>';
     main.innerHTML = h;
     $('#newP').addEventListener('click', newProject);
+    $$('.pcard', main).forEach(function (c) { c.addEventListener('click', function () { var r1 = $('.pcard-ros', c), t1 = $('h2', c); if (r1) r1.style.viewTransitionName = 'pros'; if (t1) t1.style.viewTransitionName = 'ptitle'; }); });
   };
 
   V.project = function (id, step) {
@@ -549,12 +573,13 @@
     if (!p) { main.innerHTML = '<div class="card empty"><p class="empty-t">المشروع ده مش موجود على الجهاز ده.</p><p><a class="btn" href="#projects">رجوع للمشاريع</a></p></div>'; return; }
     step = step || 'overview';
     var h = '<p class="crumb"><a href="#projects">' + ic('back') + 'كل المشاريع</a></p>' +
-      '<div class="ptitle"><label for="ptitle">عنوان المشروع</label><textarea id="ptitle" rows="1" placeholder="اكتب عنوان مبدئي">' + esc(p.title) + '</textarea></div>' +
+      '<div class="ptitle"><span class="pros" id="pros">' + rosette(p, false) + '</span><div class="ptitle-f"><label for="ptitle">عنوان المشروع</label><textarea id="ptitle" rows="1" placeholder="اكتب عنوان مبدئي">' + esc(p.title) + '</textarea></div></div>' +
       '<div class="steps" role="tablist" aria-label="أجزاء المشروع"><button type="button" role="tab" data-step="overview" class="ov" aria-selected="' + (step === 'overview') + '"><span class="dot">' + ic('steps') + '</span><span class="lbl">نظرة عامة</span></button>' +
       STEPS.map(function (s, i) { var ok = stepDone(p, s[0]); return '<button type="button" role="tab" data-step="' + s[0] + '" class="' + (ok ? 'done' : '') + '" aria-selected="' + (step === s[0]) + '"><span class="dot num">' + (ok ? ic('check') : i + 1) + '</span><span class="lbl">' + s[1] + '</span>' + (ok ? sr('مكتمل') : '') + '</button>'; }).join('') + '</div><div id="pane"></div>';
     main.innerHTML = h;
     var strip = $('.steps', main), cur = $('[aria-selected="true"]', strip);
     if (cur) strip.scrollLeft = cur.offsetLeft - (strip.clientWidth - cur.offsetWidth) / 2;
+    $$('button', strip).forEach(function (b, i) { b.style.setProperty('--i', i); });
     var ti = $('#ptitle');
     function fit() { ti.style.height = 'auto'; ti.style.height = ti.scrollHeight + 'px'; }
     fit();
@@ -569,8 +594,29 @@
     else if (TEXT[step]) textPane(p, step, pane);
     else overview(p, pane);
     if (step === 'analysis') pane.insertAdjacentHTML('afterbegin', advise(p));
+    var was = STEPS.map(function (s) { return stepDone(p, s[0]); });
+    touch.after = function (q) {
+      if (q !== p || !$('#pros')) return;
+      var now = STEPS.map(function (s) { return stepDone(p, s[0]); }), gained = [], changed = false;
+      var names = [];
+      now.forEach(function (ok, i) {
+        if (ok === was[i]) return;
+        changed = true;
+        var b = $('.steps [data-step="' + STEPS[i][0] + '"]');
+        if (b) { b.classList.toggle('done', ok); $('.dot', b).innerHTML = ok ? ic('check') : String(i + 1); }
+        if (ok) { gained.push(b); names.push(STEPS[i][1]); }
+      });
+      was = now;
+      if (!changed) return;
+      var em = $('#pros'); em.innerHTML = rosette(p, false);
+      $$('[data-d]', em).forEach(function (el) { el.style.animationDelay = '0ms'; });
+      if (!gained.length) return;
+      var all = now.every(Boolean), M = window.HubMotion;
+      if (M && !calm()) { M.turn(em); gained.forEach(function (b) { if (b) M.burst($('.dot', b), 12); }); if (all) M.celebrate(); }
+      toast(all ? 'كمّلت الأجزاء العشرة' : 'جزء «' + names[0] + '» اكتمل');
+    };
   };
-  function touch(p) { p.updated = today(); save(); }
+  function touch(p) { p.updated = today(); save(); if (touch.after) touch.after(p); }
   function tick() { var s = $('#saved'); if (!s) return; s.classList.remove('tick'); void s.offsetWidth; s.classList.add('tick'); }
 
   function overview(p, pane) {
@@ -588,13 +634,253 @@
     $('#pDel').addEventListener('click', function () { if (confirm('تمسح المشروع ده نهائي؟')) { S.projects = S.projects.filter(function (x) { return x.id !== p.id; }); save(); location.hash = '#projects'; } });
   }
 
+  /* ---------- «اشرح لي» and «اقترح لي»: rule-based help inside the project workspace ---------- */
+  /* Each entry: what it means, why it matters, a short example, a common mistake. Plain text, no citations. */
+  var EXPLAIN = {
+    problem: ['مشكلة البحث هي الحاجة اللي مش معروفة أو مش مفهومة كفاية وإنت عاوز دراستك توضّحها. بتتكتب كفقرة قصيرة: إيه اللي بنلاحظه، وإيه اللي لسه مش عارفينه.',
+      'هي اللي بتحدد كل اللي بعدها: الأسئلة والمتغيرات والتصميم. لو المشكلة مش واضحة، باقي الخطة هيبقى مش مترابط.',
+      'طلبة الفرقة الأولى بيشتكوا من قلق الامتحانات، ومش معروف هل التدريب على تنظيم الوقت بيقلل القلق ده ولا لأ.',
+      'إنك تكتب موضوع عام (زي «القلق عند الطلبة») بدل مشكلة محددة فيها حاجة ناقصة محتاجة إجابة.'],
+    q: ['أسئلة البحث هي الصيغة المحددة للي إنت عاوز تعرفه، وكل سؤال لازم يتجاوب من البيانات اللي هتجمعها.',
+      'كل سؤال بيقابله فرض وتحليل إحصائي. عدد الأسئلة ونوعها هو اللي بيحدد حجم الشغل كله.',
+      'هل توجد فروق في قلق الامتحان بين الطلبة اللي اتدربوا على تنظيم الوقت واللي ما اتدربوش؟',
+      'سؤال إجابته «آه أو لأ» من غير متغيرات قابلة للقياس، أو سؤال واسع ميتجاوبش بدراسة واحدة.'],
+    theory: ['الإطار النظري هو النظرية أو النموذج اللي بيفسر ليه المتغيرات بتاعتك المفروض تبقى مرتبطة ببعض.',
+      'من غيره النتايج بتبقى أرقام من غير تفسير. وهو اللي بيخليك تتوقع اتجاه العلاقة وتكتب فروض موجّهة.',
+      'دراسة عن أثر التدريب على الكفاءة الذاتية ممكن تبني على نظرية الكفاءة الذاتية: الخبرات الناجحة بترفع ثقة الفرد في قدرته.',
+      'إنك تسرد نظريات كتير من غير ما توضّح أنهي واحدة بتبني عليها فروضك وإزاي.'],
+    lit: ['الدراسات السابقة هي الأبحاث المنشورة القريبة من موضوعك: عملوا إيه، على مين، ولقوا إيه.',
+      'بتعرّفك اللي اتعمل قبل كده، والمقاييس المستخدمة، وحجم الأثر المتوقع اللي هتحتاجه في حساب حجم العينة.',
+      'لكل دراسة اكتب: المؤلف والسنة، العينة، الأدوات، وأهم نتيجة، ومعاها الرابط أو DOI.',
+      'إنك تكتب مرجع ما قريتوش بنفسك، أو تنقل نتيجة من ملخص دراسة تانية من غير ما ترجع للأصل.'],
+    gap: ['الفجوة هي الحاجة اللي الدراسات السابقة ما غطّتهاش: عينة مختلفة، متغير ما اتدرسش، أو نتايج متعارضة.',
+      'هي مبرر وجود دراستك. من غير فجوة واضحة، البحث بيبقى تكرار من غير إضافة.',
+      'أغلب دراسات برامج تنظيم الوقت اتعملت على طلبة ثانوي، ومفيش دراسات كفاية على طلبة الجامعة في مصر.',
+      'إنك تقول «مفيش دراسات» من غير مراجعة منظمة. الأدق تقول «في حدود اطلاع الباحث».'],
+    h: ['الفرض هو إجابة متوقعة لسؤال البحث، مكتوبة بشكل يتقبل الاختبار الإحصائي. ممكن يكون موجّه (بيحدد الاتجاه) أو غير موجّه.',
+      'الفرض هو اللي بيتحول لاختبار إحصائي. نوعه (موجّه ولا لأ) بيأثر على طريقة قراءة الدلالة.',
+      'توجد فروق ذات دلالة إحصائية في قلق الامتحان بين المجموعة التجريبية والضابطة لصالح التجريبية (القلق أقل).',
+      'إنك تكتب فرض موجّه من غير سند نظري أو دراسات سابقة تدعم الاتجاه، أو تغيّر الفرض بعد ما تشوف النتايج.'],
+    design: ['تصميم البحث هو خطة الدراسة: هتقارن مجموعات، ولا هتقيس علاقات، ولا هتتابع نفس الأفراد على فترات.',
+      'التصميم هو اللي بيحدد إنت تقدر تقول «سبب» ولا «علاقة» بس، وبيحدد الاختبار الإحصائي المناسب.',
+      'تجريبي بمجموعتين: مجموعة بتاخد البرنامج ومجموعة لأ، والتوزيع عشوائي، والقياس بعد البرنامج.',
+      'إنك تستنتج سببية من تصميم ارتباطي، أو تسمّي التصميم «تجريبي» من غير توزيع عشوائي ومجموعة ضابطة.'],
+    paired: ['السؤال هنا: الدرجات اللي هتقارنها جاية من نفس الأفراد (قبلي وبعدي مثلاً) ولا من أفراد مختلفين؟',
+      'القياسات المرتبطة ليها اختبارات مختلفة عن المجموعات المستقلة. اختيار غلط هنا بيدّي نتيجة غلط.',
+      'قياس القلق لنفس الطلبة قبل البرنامج وبعده = قياسات مرتبطة. مقارنة طلبة علمي بطلبة أدبي = مجموعات مستقلة.',
+      'إنك تعامل القياس القبلي والبعدي لنفس الأفراد كأنهم مجموعتين مستقلتين.'],
+    dnote: ['هنا بتكتب إزاي هتضبط الدراسة: التوزيع العشوائي، تثبيت الظروف، والحاجات اللي ممكن تأثر على النتيجة غير المتغير المستقل.',
+      'الضبط هو اللي بيخلي النتيجة ترجع للمتغير المستقل مش لحاجة تانية. ده اسمه الصدق الداخلي.',
+      'المجموعتين اتطبق عليهم المقياس في نفس الأسبوع ونفس القاعة، والتوزيع اتعمل بالقرعة.',
+      'إنك تتجاهل تهديدات معروفة زي تسرّب المشاركين، أو أثر القياس القبلي، أو أحداث حصلت أثناء التجربة.'],
+    tools: ['الأدوات هي المقاييس أو الاختبارات اللي هتقيس بيها كل متغير. لكل أداة: اسمها، صاحبها، عدد بنودها، ونسختها العربية.',
+      'لو الأداة مش ثابتة وصادقة على عينة شبه عينتك، النتايج كلها هتبقى محل شك.',
+      'مقياس قلق الامتحان (اكتب صاحبه وسنة النسخة العربية)، 20 بند، ومعامل ألفا في دراسات سابقة على طلبة جامعة.',
+      'إنك تستخدم مقياس مترجم من غير ما تتحقق من ثباته وصدقه على عينتك، أو تعدّل البنود من غير ما تعيد التقنين.'],
+    perm: ['إذن الاستخدام هو موافقة صاحب المقياس أو الناشر إنك تستخدمه، أو التأكد إنه متاح للاستخدام البحثي.',
+      'في مقاييس ليها حقوق نشر، واستخدامها من غير إذن ممكن يمنع نشر بحثك.',
+      'راسلت مُعِدّ النسخة العربية بالإيميل وخدت موافقة مكتوبة، واحتفظت بنسخة منها في ملاحق الرسالة.',
+      'إنك تفترض إن أي مقياس منشور في بحث يبقى متاح للاستخدام من غير إذن.'],
+    pop: ['المجتمع هو كل الناس اللي عاوز تعمّم عليهم النتيجة، والعينة هي الجزء اللي هتطبّق عليه فعلاً. اكتب مين، ومنين، واتاختاروا إزاي.',
+      'طريقة اختيار العينة هي اللي بتحدد إنت تقدر تعمّم على مين. العينة المتاحة تعميمها أضيق من العشوائية.',
+      'المجتمع: طلبة الفرقة الأولى بكلية الآداب. العينة: 120 طالب وطالبة اتاختاروا عشوائياً من كشوف الفرقة.',
+      'إنك تعمّم على مجتمع أوسع من اللي عينتك اتسحبت منه، أو متكتبش معايير الاشتمال والاستبعاد.'],
+    n: ['الحجم المستهدف هو عدد المشاركين اللي محتاجه علشان الاختبار الإحصائي يقدر يكشف الأثر لو موجود.',
+      'عينة صغيرة ممكن تطلّع «مفيش فرق» والفرق موجود فعلاً. ده اسمه ضعف القوة الإحصائية.',
+      'لاختبار t لمجموعتين مستقلتين، بحجم أثر متوسط (d = 0.5) وقوة 0.80 وألفا 0.05، محتاج حوالي 64 في كل مجموعة.',
+      'إنك تختار العدد «على حسب المتاح» من غير حساب قوة، أو تنسى تزوّد نسبة للتسرّب المتوقع.'],
+    plan: ['خطة التحليل بتقول، لكل فرض: أنهي اختبار هتستخدمه، وأنهي افتراضات هتفحصها قبله، وهتعمل إيه لو الافتراضات مش متحققة.',
+      'كتابة الخطة قبل جمع البيانات بتحميك من إنك تجرّب اختبارات كتير وتختار اللي طلّع دلالة.',
+      'الفرض الأول: اختبار t للعينات المستقلة بعد فحص الاعتدالية وتجانس التباين، ولو مش متحققين: Mann-Whitney. وهكتب Cohen\'s d وفترة الثقة.',
+      'إنك تكتفي بقيمة p من غير حجم الأثر وفترة الثقة، أو تعمل مقارنات كتير من غير تصحيح.'],
+    irb: ['موافقة لجنة الأخلاقيات هي تصريح رسمي من لجنة في جامعتك أو مؤسستك إن الدراسة مش هتضر المشاركين.',
+      'أغلب المجلات مش بتنشر بحث على بشر من غير رقم موافقة، ولازم تاخدها قبل ما تبدأ جمع البيانات.',
+      'لجنة أخلاقيات البحث العلمي بالكلية، الطلب اتقدّم ومستني الرد. (اكتب رقم الموافقة وتاريخها لما تطلع.)',
+      'إنك تبدأ التطبيق قبل ما الموافقة تطلع، أو تغيّر في الإجراءات بعد الموافقة من غير ما تبلّغ اللجنة.'],
+    consent: ['الموافقة المستنيرة معناها إن المشارك عارف هدف الدراسة، والمطلوب منه، وحقه ينسحب، قبل ما يوافق. والسرية معناها إن بياناته محدش يعرف إنها بتاعته.',
+      'دي حقوق المشارك الأساسية. ومع الأطفال لازم موافقة ولي الأمر وكمان قبول الطفل نفسه.',
+      'هوزّع ورقة موافقة مكتوبة قبل التطبيق، والاستبيانات من غير أسماء، والبيانات على جهاز بكلمة سر ومحدش يطّلع عليها غير الباحث والمشرف.',
+      'إنك تجمع أسماء أو أرقام تليفونات مش محتاجها، أو تدّي إحساس إن المشاركة إجبارية (زي ربطها بدرجات).'],
+    sup: ['هنا بتسجّل ملاحظات مشرفك بعد كل مقابلة: طلب إيه، واتفقتوا على إيه، وبتاريخ إمتى.',
+      'التسجيل بيمنع إنك تنسى تعديل مطلوب، وبيبقى مرجع لو حصل اختلاف بعدين على اللي اتفقتوا عليه.',
+      '2026/03/10: المشرف طلب تقليل عدد الفروض لتلاتة، وإضافة دراستين عربيتين حديثتين للخلفية.',
+      'إنك تكتب الملاحظة من الذاكرة بعد أسابيع، أو متسجّلش إنت نفّذتها ولا لأ.'],
+    next: ['الخطوة الجاية هي حاجة واحدة محددة هتعملها بعد كده، ومعاها ميعاد.',
+      'خطوة واحدة واضحة بميعاد أسهل تتنفذ من قايمة طويلة. وهي أول حاجة هتشوفها لما تفتح المشروع تاني.',
+      'أراسل مُعِدّ المقياس لطلب الإذن قبل يوم الخميس.',
+      'إنك تكتب هدف كبير (زي «أخلّص الرسالة») بدل خطوة تقدر تبدأها النهارده.'],
+    'v-name': ['اسم المتغير هو الخاصية اللي بتقيسها أو بتتحكم فيها، مكتوبة بشكل محدد يتقاس.',
+      'الاسم الواضح بيخلي الفروض والتحليل مفهومين، والمرشد الإحصائي بيستخدمه في اقتراحاته.',
+      '«قلق الامتحان» أوضح من «الحالة النفسية». و«نوع التدريب (برنامج / بدون)» أوضح من «التدريب».',
+      'إنك تكتب مفهوم واسع ملوش مقياس محدد، أو تجمع متغيرين في اسم واحد.'],
+    'v-role': ['دور المتغير: المستقل هو اللي بتغيّره أو بتقارن على أساسه، والتابع هو اللي بتقيس أثره. الوسيط بيفسّر العلاقة، والمعدِّل بيغيّر قوتها، والضابط بتثبّت أثره.',
+      'الدور هو اللي بيحدد شكل الفرض ونوع التحليل. نفس المتغير ممكن يبقى مستقل في دراسة وتابع في دراسة تانية.',
+      'البرنامج التدريبي (مستقل) ← قلق الامتحان (تابع). الكفاءة الذاتية ممكن تكون وسيط، والنوع ممكن يكون معدِّل.',
+      'الخلط بين الوسيط والمعدِّل: الوسيط بيجاوب «إزاي الأثر بيحصل»، والمعدِّل بيجاوب «عند مين الأثر أقوى».'],
+    'v-level': ['مستوى القياس: اسمي يعني فئات من غير ترتيب (زي النوع)، ترتيبي يعني فئات بترتيب (زي المستوى التعليمي)، وكمّي يعني درجات بمسافات متساوية (زي درجة مقياس).',
+      'المستوى هو اللي بيحدد أنهي إحصاءات ينفع تتحسب. المتوسط مثلاً ملوش معنى مع متغير اسمي.',
+      'المجموعة (تجريبية / ضابطة) = اسمي. ترتيب الطالب في الفصل = ترتيبي. الدرجة الكلية على مقياس القلق = كمّي.',
+      'إنك تعامل أرقام الترميز (1 = ذكر، 2 = أنثى) كأنها كمّية، أو تعامل بند واحد من مقياس ليكرت كأنه كمّي من غير تبرير.'],
+    'v-groups': ['عدد المجموعات هو عدد الفئات في المتغير الاسمي أو الترتيبي، أو عدد مرات القياس لو القياسات متكررة.',
+      'مجموعتين ليهم اختبارات (زي t) وأكتر من مجموعتين ليهم اختبارات تانية (زي ANOVA).',
+      'تجريبية وضابطة = 2. قياس قبلي وبعدي وتتبعي = 3.',
+      'إنك تقارن أكتر من مجموعتين باختبارات t متكررة من غير تصحيح، وده بيزوّد احتمال الخطأ من النوع الأول.'],
+    'v-tool': ['«بيتقاس بإيه» يعني الأداة اللي هتطلّع منها درجة المتغير ده: مقياس، اختبار، ملاحظة، أو سجل.',
+      'ربط كل متغير بأداته بيكشف بدري لو فيه متغير لسه ملوش طريقة قياس.',
+      'قلق الامتحان ← مقياس قلق الامتحان، الدرجة الكلية. التحصيل ← درجات آخر العام من سجلات الكلية.',
+      'إنك تسيب متغير من غير أداة، أو تستخدم سؤال واحد لقياس مفهوم مركّب.']
+  };
+  var EX_LABELS = ['يعني إيه', 'ليه مهم', 'مثال', 'غلطة شائعة'];
+  function explainHtml(key) {
+    var e = EXPLAIN[key]; if (!e) return '';
+    return '<dl class="xp">' + e.map(function (t, i) { return '<div><dt>' + EX_LABELS[i] + '</dt><dd>' + esc(t) + '</dd></div>'; }).join('') + '</dl>';
+  }
+  function named(p, role) { return (p.vars || []).filter(function (v) { return v.name && v.role === role; }); }
+  function q(name) { return '«' + name + '»'; }
+  function effectSize(test) {
+    if (/MANOVA/.test(test)) return 'مربع إيتا الجزئي (partial η²) لكل متغير تابع';
+    if (/ANOVA/.test(test)) return 'مربع إيتا (η²) أو مربع إيتا الجزئي';
+    if (/اختبار t/.test(test)) return 'Cohen\'s d';
+    if (/الانحدار اللوجستي/.test(test)) return 'نسبة الأرجحية (Odds Ratio) وفترة ثقتها';
+    if (/الانحدار المتعدد/.test(test)) return 'R² ومعاملات بيتا المعيارية';
+    if (/بيرسون/.test(test)) return 'معامل الارتباط r نفسه و r²';
+    if (/سبيرمان/.test(test)) return 'معامل سبيرمان ρ نفسه';
+    if (/McNemar/.test(test)) return 'نسبة الأرجحية (Odds Ratio)';
+    if (/مربع كاي/.test(test)) return 'Cramér\'s V (أو φ لجدول 2×2)';
+    if (/Friedman/.test(test)) return 'Kendall\'s W';
+    if (/Kruskal/.test(test)) return 'مربع إبسلون (ε²)';
+    if (/Wilcoxon|Mann-Whitney/.test(test)) return 'r = Z ÷ √N';
+    return 'حجم الأثر المناسب للاختبار';
+  }
+  function childSample(p) { return S.kids.length > 0 || /أطفال|اطفال|طفل|تلاميذ|تلميذ/.test(String((p.d || {}).pop || '')); }
+  /* Each rule returns { text } or { need }. Drafts only use what the researcher already entered. */
+  var SUGGEST = {
+    q: function (p) {
+      var iv = named(p, 'iv'), dv = named(p, 'dv'), out = [];
+      if (!iv.length || !dv.length) return { need: 'اكتب الأول متغير مستقل ومتغير تابع (بالاسم) في جزء «المتغيرات».' };
+      dv.forEach(function (d) { iv.forEach(function (x) {
+        out.push(x.level === 'scale' || x.level === 'ordinal' && d.level !== 'scale' ? 'هل توجد علاقة بين ' + q(x.name) + ' و' + q(d.name) + '؟' : 'هل توجد فروق في ' + q(d.name) + ' ترجع إلى ' + q(x.name) + '؟');
+      }); });
+      named(p, 'med').forEach(function (m) { out.push('هل يتوسط ' + q(m.name) + ' العلاقة بين ' + q(iv[0].name) + ' و' + q(dv[0].name) + '؟'); });
+      named(p, 'mod').forEach(function (m) { out.push('هل تختلف العلاقة بين ' + q(iv[0].name) + ' و' + q(dv[0].name) + ' باختلاف ' + q(m.name) + '؟'); });
+      return { text: out.join('\n') };
+    },
+    h: function (p) {
+      var iv = named(p, 'iv'), dv = named(p, 'dv'), out = [];
+      if (!iv.length || !dv.length) return { need: 'اكتب الأول متغير مستقل ومتغير تابع (بالاسم) في جزء «المتغيرات».' };
+      var x = iv[0], d = dv[0], rel = p.paired === 'rel';
+      if (x.level === 'scale') {
+        out.push('غير موجّه: توجد علاقة ارتباطية ذات دلالة إحصائية بين ' + q(x.name) + ' و' + q(d.name) + '.');
+        out.push('موجّه (لو النظرية بتدعم اتجاه): توجد علاقة [موجبة / سالبة] ذات دلالة إحصائية بين ' + q(x.name) + ' و' + q(d.name) + '.');
+      } else if (d.level === 'nominal') {
+        out.push('غير موجّه: توجد علاقة ذات دلالة إحصائية بين ' + q(x.name) + ' و' + q(d.name) + '.');
+      } else {
+        var what = rel ? 'قياسات ' + q(x.name) : 'مجموعات ' + q(x.name);
+        out.push('غير موجّه: توجد فروق ذات دلالة إحصائية في ' + q(d.name) + ' بين ' + what + '.');
+        out.push('موجّه (لو النظرية بتدعم اتجاه): ' + (d.level === 'scale' ? 'متوسط ' : 'رتب ') + q(d.name) + ' في [اكتب ' + (rel ? 'القياس' : 'المجموعة') + '] أعلى منه في [اكتب ' + (rel ? 'القياس التاني' : 'المجموعة التانية') + '].');
+      }
+      named(p, 'med').forEach(function (m) { out.push('وساطة: يتوسط ' + q(m.name) + ' العلاقة بين ' + q(x.name) + ' و' + q(d.name) + ' (الأثر غير المباشر دال إحصائياً).'); });
+      named(p, 'mod').forEach(function (m) { out.push('تعديل: تختلف قوة العلاقة بين ' + q(x.name) + ' و' + q(d.name) + ' باختلاف مستوى ' + q(m.name) + ' (التفاعل دال إحصائياً).'); });
+      if (!p.design) out.push('ملحوظة: لسه ما حددتش تصميم البحث. الفروض السببية محتاجة تصميم تجريبي.');
+      else if (/ارتباطي|مقارن/.test(p.design)) out.push('ملحوظة: تصميمك ' + p.design + '، فالصياغة تبقى «علاقة» أو «فروق» من غير ألفاظ سببية زي «أثر».');
+      return { text: out.join('\n') };
+    },
+    tools: function (p) {
+      var vs = (p.vars || []).filter(function (v) { return v.name; });
+      if (!vs.length) return { need: 'اكتب متغيراتك الأول في جزء «المتغيرات»، ومعاها كل متغير بيتقاس بإيه.' };
+      return { text: vs.map(function (v) { return '- ' + q(v.name) + ': ' + (v.tool ? v.tool + ' [اكتب: صاحب الأداة، النسخة العربية، عدد البنود، وثباتها في دراسات سابقة]' : '[لسه ما كتبتش بيتقاس بإيه في جدول المتغيرات]'); }).join('\n') };
+    },
+    pop: function (p) {
+      if (!p.design) return { need: 'حدد «تصميم البحث» الأول في جزء «التصميم».' };
+      var t = 'المجتمع: [مين بالظبط، ومنين].\n', ds = p.design;
+      if (/مجموعتين مستقلتين/.test(ds)) t += 'العينة: [العدد] مشارك، بيتوزعوا عشوائياً على مجموعتين: تجريبية وضابطة.\n';
+      else if (/قبلي وبعدي/.test(ds)) t += 'العينة: [العدد] مشارك في مجموعة واحدة، بيتقاسوا قبل البرنامج وبعده.\n';
+      else if (/شبه تجريبي/.test(ds)) t += 'العينة: [العدد] مشارك في مجموعات قائمة بالفعل (زي فصول)، من غير توزيع عشوائي. اكتب إزاي هتتأكد إن المجموعات متكافئة.\n';
+      else if (/ارتباطي/.test(ds)) t += 'العينة: [العدد] مشارك، كلهم بيتطبق عليهم كل المقاييس مرة واحدة.\n';
+      else if (/مقارن/.test(ds)) t += 'العينة: [العدد] مشارك، مقسّمين على المجموعات اللي هتقارن بينها: [اكتب عدد كل مجموعة].\n';
+      else if (/طولي/.test(ds)) t += 'العينة: [العدد] مشارك، بيتابعوا على [عدد] قياسات. اكتب نسبة التسرّب المتوقعة.\n';
+      else if (/تقنين/.test(ds)) t += 'العينة: عينة استطلاعية [العدد] لتجربة البنود، وعينة تقنين [العدد] لحساب الثبات والصدق.\n';
+      else if (/نوعي/.test(ds)) t += 'المشاركون: [العدد] مشارك اتاختاروا قصدياً، لحد ما توصل للتشبّع.\n';
+      else t += 'العينة: [العدد] مشارك. اكتب أنهي جزء منهم للشق الكمّي وأنهي للشق النوعي.\n';
+      t += 'طريقة الاختيار: [عشوائية بسيطة / طبقية / متاحة].\nمعايير الاشتمال والاستبعاد: [اكتبها].\nالحجم: احسبه من معمل الإحصاء (حجم العينة والقوة)، واكتبه في «الحجم المستهدف» مع الأساس.';
+      return { text: t };
+    },
+    plan: function (p) {
+      var r = recommend(p);
+      if (!r) return { need: 'اكتب الأول متغير مستقل ومتغير تابع (بالاسم) في جزء «المتغيرات».' };
+      if (r.need) return { need: r.need };
+      if (!r.recs.length) return { need: 'مفيش اقتراح جاهز للتركيبة دي من المتغيرات. راجع مستوى القياس في جزء «المتغيرات».' };
+      var t = r.recs.map(function (x) {
+        return 'الاختبار: ' + x.test + '\nليه: ' + x.why + '\nأفحص قبل التحليل: ' + x.check.join('؛ ') + (x.alt ? '\nلو الافتراضات مش متحققة: ' + x.alt : '') + '\nأكتب مع النتيجة: ' + effectSize(x.test) + '، وفترة الثقة 95%.';
+      }).join('\n\n');
+      if (r.extra.length) t += '\n\n' + r.extra.join('\n');
+      return { text: t };
+    },
+    consent: function (p) {
+      var kid = childSample(p), t = [];
+      if (kid) {
+        t.push('- موافقة مكتوبة من ولي أمر كل طفل قبل التطبيق.', '- قبول الطفل نفسه بلغة بسيطة يفهمها، ومن حقه يرفض أو يوقف في أي وقت حتى لو ولي الأمر وافق.', '- التطبيق في وقت ومكان مناسبين للطفل، وفي وجود مسؤول من المدرسة لو التطبيق هناك.');
+      } else {
+        t.push('- موافقة مستنيرة مكتوبة من كل مشارك قبل التطبيق: هدف الدراسة، المطلوب منه، والوقت المتوقع.', '- المشاركة اختيارية، ومن حق المشارك ينسحب في أي وقت من غير أي ضرر عليه.');
+      }
+      t.push('- البيانات من غير أسماء: كود لكل مشارك، وجدول الأكواد محفوظ لوحده.', '- حفظ البيانات: [فين، ومين يقدر يطّلع عليها، وهتتمسح إمتى].', '- النتايج بتتعرض مجمّعة، ومحدش يتعرّف عليه منها.');
+      if (kid) t.push('- النتايج مش تشخيص، ومتتبنيش عليها قرارات عن الطفل.');
+      return { text: (kid ? 'العينة فيها أطفال، فالمطلوب:\n' : '') + t.join('\n') };
+    },
+    next: function (p) {
+      var nx = null;
+      STEPS.some(function (s) { if (s[0] !== 'notes' && !stepDone(p, s[0])) { nx = s; return true; } return false; });
+      if (!nx) return { text: 'كل الأجزاء مكتوبة. اطبع نسخة من «نظرة عامة» وراجعها مع مشرفك، وحدد ميعاد المقابلة: [التاريخ].' };
+      return { text: 'أكمّل جزء «' + nx[1] + '» (' + stepHint(nx[0]) + ') قبل [اكتب الميعاد].' };
+    }
+  };
+  /* A field with its help row. Markup only; helpWire() attaches behaviour. */
+  function helpRow(key) {
+    var h = '<div class="helprow">';
+    if (EXPLAIN[key]) h += '<button class="chipbtn" type="button" data-explain="' + key + '" aria-expanded="false" aria-controls="xp-' + key + '">اشرح لي</button>';
+    if (SUGGEST[key]) h += '<button class="chipbtn sug" type="button" data-suggest="' + key + '" aria-expanded="false" aria-controls="sg-' + key + '">اقترح لي</button>';
+    return h + '</div>' + (EXPLAIN[key] ? '<div class="xpanel" id="xp-' + key + '" hidden></div>' : '') + (SUGGEST[key] ? '<div class="spanel" id="sg-' + key + '" role="region" aria-label="مسودة مقترحة" hidden></div>' : '');
+  }
+  function helpWire(p, root) {
+    $$('[data-explain]', root).forEach(function (b) {
+      b.addEventListener('click', function () {
+        var key = b.getAttribute('data-explain'), box = document.getElementById('xp-' + key), open = box.hidden;
+        if (b.hasAttribute('data-shared')) $$('[data-shared]', root).forEach(function (o) { if (o !== b) { o.setAttribute('aria-expanded', 'false'); document.getElementById('xp-' + o.getAttribute('data-explain')).hidden = true; } });
+        if (open) box.innerHTML = explainHtml(key);
+        box.hidden = !open; b.setAttribute('aria-expanded', String(open));
+      });
+    });
+    $$('[data-suggest]', root).forEach(function (b) {
+      b.addEventListener('click', function () {
+        var key = b.getAttribute('data-suggest'), box = document.getElementById('sg-' + key), el = document.getElementById('f-' + key);
+        if (!box.hidden) { box.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
+        var r = SUGGEST[key](p);
+        if (r.need) box.innerHTML = '<p class="sg-need">' + esc(r.need) + '</p><p class="row"><button class="btn" type="button" data-skip="' + key + '">تمام</button></p>';
+        else box.innerHTML = '<p class="sg-label">مسودة مقترحة: راجعها مع مشرفك</p><p class="sg-text">' + esc(r.text).replace(/\n/g, '<br>') + '</p>' +
+          (el.value.trim() ? '<p class="sg-note">عندك نص مكتوب في الخانة دي. الاقتراح هيتضاف تحته، ومش هيمسح حاجة.</p>' : '') +
+          '<p class="row"><button class="btn primary" type="button" data-use="' + key + '">استخدم الاقتراح</button><button class="btn" type="button" data-skip="' + key + '">تجاهل</button></p>';
+        box.hidden = false; b.setAttribute('aria-expanded', 'true');
+        var skip = $('[data-skip]', box), use = $('[data-use]', box);
+        skip.addEventListener('click', function () { box.hidden = true; b.setAttribute('aria-expanded', 'false'); b.focus(); });
+        if (use) use.addEventListener('click', function () {
+          var cur = el.value.replace(/\s+$/, '');
+          el.value = (cur ? cur + '\n\n' : '') + r.text;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          box.hidden = true; b.setAttribute('aria-expanded', 'false'); el.focus();
+          toast(cur ? 'الاقتراح اتضاف تحت اللي كتبته' : 'الاقتراح اتحط في الخانة. عدّله براحتك');
+        });
+      });
+    });
+  }
+
   function textPane(p, step, pane) {
     p.d = p.d || {};
-    pane.innerHTML = '<form class="card form">' + TEXT[step].map(function (f) { return field('f-' + f[0], f[1], p.d[f[0]] || '', f[2], f[3]); }).join('') +
+    pane.innerHTML = '<form class="card form">' + TEXT[step].map(function (f) { return '<div class="hf">' + field('f-' + f[0], f[1], p.d[f[0]] || '', f[2], f[3]) + helpRow(f[0]) + '</div>'; }).join('') +
       '<p class="muted small autosave" id="saved" aria-live="polite">' + ic('check') + 'بيتحفظ لوحده وإنت بتكتب.</p></form>' + nextBtn(p, step);
     $$('[data-f]', pane).forEach(function (el) {
       el.addEventListener('input', function () { p.d[el.id.slice(2)] = el.value; touch(p); tick(); });
     });
+    helpWire(p, pane);
   }
   function nextBtn(p, step) {
     var i = STEPS.map(function (s) { return s[0]; }).indexOf(step), n = STEPS[i + 1];
@@ -602,9 +888,10 @@
   }
 
   function designPane(p, pane) {
-    pane.innerHTML = '<form class="card form">' + sel('f-design', 'تصميم البحث', DESIGNS, p.design) +
-      sel('f-paired', 'القياسات على نفس الأفراد ولا أفراد مختلفين؟', [['ind', 'مجموعات مستقلة (أفراد مختلفين)'], ['rel', 'قياسات مرتبطة (نفس الأفراد أو أزواج متناظرة)']], p.paired, 'ده بيحدد نوع الاختبار الإحصائي') +
-      field('f-dnote', 'ملاحظات على التصميم', (p.d || {}).dnote || '', 'الضبط، التوزيع العشوائي، مصادر التهديد للصدق الداخلي', 'area') + '</form>' + nextBtn(p, 'design');
+    pane.innerHTML = '<form class="card form"><div class="hf">' + sel('f-design', 'تصميم البحث', DESIGNS, p.design) + helpRow('design') + '</div>' +
+      '<div class="hf">' + sel('f-paired', 'القياسات على نفس الأفراد ولا أفراد مختلفين؟', [['ind', 'مجموعات مستقلة (أفراد مختلفين)'], ['rel', 'قياسات مرتبطة (نفس الأفراد أو أزواج متناظرة)']], p.paired, 'ده بيحدد نوع الاختبار الإحصائي') + helpRow('paired') + '</div>' +
+      '<div class="hf">' + field('f-dnote', 'ملاحظات على التصميم', (p.d || {}).dnote || '', 'الضبط، التوزيع العشوائي، مصادر التهديد للصدق الداخلي', 'area') + helpRow('dnote') + '</div></form>' + nextBtn(p, 'design');
+    helpWire(p, pane);
     $('#f-design').addEventListener('change', function () { p.design = this.value; touch(p); });
     $('#f-paired').addEventListener('change', function () { p.paired = this.value; touch(p); });
     $('#f-dnote').addEventListener('input', function () { p.d = p.d || {}; p.d.dnote = this.value; touch(p); });
@@ -617,14 +904,30 @@
         (p.vars.length ? p.vars.map(function (v, i) {
           return '<tr data-i="' + i + '"><td><input type="text" data-k="name" aria-label="اسم المتغير" value="' + esc(v.name) + '"></td><td><select data-k="role" aria-label="دوره">' + opts(ROLE_V, v.role) + '</select></td><td><select data-k="level" aria-label="مستوى القياس">' + opts(LEVEL_V, v.level) + '</select></td><td><input type="number" min="2" data-k="groups" aria-label="عدد المجموعات" value="' + esc(v.groups || '') + '"' + (v.level === 'scale' ? ' disabled' : '') + '></td><td><input type="text" data-k="tool" aria-label="بيتقاس بإيه" value="' + esc(v.tool || '') + '"></td><td><button class="btn ghost icon" type="button" data-del aria-label="امسح المتغير">' + ic('close') + '</button></td></tr>';
         }).join('') : '<tr class="none"><td colspan="6" class="muted">لسه مفيش متغيرات.</td></tr>') +
-        '</tbody></table></div><p class="vars-end"><button class="btn" type="button" id="addV">' + ic('plus') + 'ضيف متغير</button></p></div>' + advise(p) + nextBtn(p, 'variables');
-      $('#addV').addEventListener('click', function () { p.vars.push({ name: '', role: p.vars.length ? 'dv' : 'iv', level: 'scale', groups: '', tool: '' }); touch(p); draw(); });
+        '</tbody></table></div><p class="vars-end"><button class="btn" type="button" id="addV">' + ic('plus') + 'ضيف متغير</button></p>' +
+        '<div class="helprow cols"><span class="helprow-t">اشرح لي:</span>' + [['v-name', 'اسم المتغير'], ['v-role', 'دوره'], ['v-level', 'مستوى القياس'], ['v-groups', 'عدد المجموعات'], ['v-tool', 'بيتقاس بإيه']].map(function (c) { return '<button class="chipbtn" type="button" data-shared data-explain="' + c[0] + '" aria-expanded="false" aria-controls="xp-' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+        ['v-name', 'v-role', 'v-level', 'v-groups', 'v-tool'].map(function (k) { return '<div class="xpanel" id="xp-' + k + '" hidden></div>'; }).join('') + '</div>' + advise(p) + nextBtn(p, 'variables');
+      helpWire(p, pane);
+      $('#addV').addEventListener('click', function () {
+        p.vars.push({ name: '', role: p.vars.length ? 'dv' : 'iv', level: 'scale', groups: '', tool: '' }); touch(p); draw();
+        var row = $('tr[data-i="' + (p.vars.length - 1) + '"]', pane);
+        if (row && row.animate && !calm()) row.animate([{ opacity: 0, transform: 'translateY(-14px)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: 'cubic-bezier(.16,1,.3,1)' });
+      });
       $$('tr[data-i]', pane).forEach(function (tr) {
         var v = p.vars[+tr.getAttribute('data-i')];
         $$('[data-k]', tr).forEach(function (el) {
           el.addEventListener('change', function () { v[el.getAttribute('data-k')] = el.value; touch(p); draw(); });
         });
-        $('[data-del]', tr).addEventListener('click', function () { p.vars.splice(+tr.getAttribute('data-i'), 1); touch(p); draw(); });
+        $('[data-del]', tr).addEventListener('click', function () {
+          var idx = +tr.getAttribute('data-i');
+          function drop() {
+            var tops = $$('tr[data-i]', pane).map(function (x) { return x.getBoundingClientRect().top; });
+            p.vars.splice(idx, 1); touch(p); draw();
+            if (calm()) return;
+            $$('tr[data-i]', pane).forEach(function (x, k) { var from = tops[k >= idx ? k + 1 : k], dy = from - x.getBoundingClientRect().top; if (dy && x.animate) x.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.16,1,.3,1)' }); });
+          }
+          if (tr.animate && !calm()) tr.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-24px)' }], { duration: 170, easing: 'ease-in' }).onfinish = drop; else drop();
+        });
       });
     }
     draw();
@@ -715,6 +1018,7 @@
     var parts = (location.hash || '#home').slice(1).split('/'), r = parts[0];
     if (!V[r] && !MODS[r]) r = 'home';
     if (window.HubMotion) window.HubMotion.stop();
+    touch.after = null;
     document.body.classList.remove('is-intro');
     if (MODS[r]) modView(r, parts[1], parts[2]); else V[r](parts[1], parts[2]);
     drawNav(r === 'project' ? 'projects' : r);
@@ -726,7 +1030,7 @@
   /* After a render: hand each marked element its place in the entrance sequence, and count numbers up. */
   function stage(r) {
     $$('[data-d]', main).forEach(function (el) { el.style.animationDelay = el.getAttribute('data-d') + 'ms'; });
-    if (!calm()) $$('[data-count]', main).forEach(function (el) {
+    if (!calm()) $$('text[data-count]', main).forEach(function (el) {
       var to = +el.getAttribute('data-count'), t0 = 0;
       if (!(to > 0)) return;
       function step(t) { if (!t0) { t0 = t + 500; el.textContent = '0'; } var k = Math.min(1, Math.max(0, (t - t0) / 800)); el.textContent = String(Math.round(to * (1 - Math.pow(1 - k, 3)))); if (k < 1 && el.isConnected) requestAnimationFrame(step); else el.textContent = String(to); }
@@ -735,7 +1039,11 @@
     if (window.HubMotion) window.HubMotion.after(main, r);
   }
   /* Route changes cross-fade through the View Transitions API where it exists; otherwise they are instant. */
+  var ORDER = ['home', 'projects', 'project', 'profile', 'family', 'theories', 'kids', 'decide', 'explore', 'assistant', 'labs', 'role'];
+  function rank(hash) { var a = (hash || '#home').slice(1).split('/'), i = ORDER.indexOf(a[0]); if (i < 0) i = 0; if (a[0] === 'project') i += (STEPS.map(function (x) { return x[0]; }).indexOf(a[2]) + 2) / 100; return i; }
+  var lastRank = rank(location.hash);
   function go() {
+    var nr = rank(location.hash); document.documentElement.setAttribute('data-dir', nr >= lastRank ? 'fwd' : 'back'); lastRank = nr;
     if (route.ready && document.startViewTransition && !calm()) { try { var vt = document.startViewTransition(route), quiet = function () {}; vt.ready.catch(quiet); vt.finished.catch(quiet); vt.updateCallbackDone.catch(quiet); return; } catch (e) {} }
     route();
   }
@@ -748,4 +1056,5 @@
   };
   window.addEventListener('hashchange', go);
   route();
+  setTimeout(function () { document.documentElement.classList.remove('boot'); }, 1800);
 })();
