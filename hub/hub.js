@@ -15,7 +15,7 @@
   function applyTheme(force) {
     var t = force || storedTheme() || (darkMq && darkMq.matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', t);
-    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t === 'dark' ? '#0e0b1f' : '#f3f5fa');
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t === 'dark' ? '#0c032c' : '#eae7fe');
     return t;
   }
   var theme = applyTheme();
