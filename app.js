@@ -26,6 +26,11 @@ const PSY = (() => {
 
   /* ---- reliability ---- */
   function alphaFromVars(k, sumItemVar, totalVar) { return (k / (k - 1)) * (1 - sumItemVar / totalVar); }
+  /* F distribution: CDF through the regularized incomplete beta, quantile by bisection */
+  const fCdf = (x, d1, d2) => x <= 0 ? 0 : ibeta(d1 * x / (d1 * x + d2), d1 / 2, d2 / 2);
+  function fInv(p, d1, d2) { let lo = 0, hi = 1; while (fCdf(hi, d1, d2) < p && hi < 1e12) hi *= 2; for (let i = 0; i < 200 && hi - lo > 1e-12 * Math.max(1, hi); i++) { const m = (lo + hi) / 2; if (fCdf(m, d1, d2) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
+  /* Feldt (1965) F-based 95% interval for coefficient alpha: n cases, k items */
+  function alphaCI(a, n, k, conf = 0.95) { if (!(isFinite(a) && n > 2 && k > 1 && n === Math.round(n) && k === Math.round(k))) return null; const d1 = n - 1, d2 = (n - 1) * (k - 1), t = (1 - conf) / 2; return { lo: 1 - (1 - a) * fInv(1 - t, d1, d2), hi: 1 - (1 - a) * fInv(t, d1, d2), d1, d2 }; }
   function itemStats(M) {
     const n = M.length, k = M[0].length, tot = rowSums(M), vt = variance(tot);
     const iv = [], im = [], isd = [], rit = [], aid = [];
@@ -237,7 +242,7 @@ const PSY = (() => {
   function describe(a) { const s = sorted(a); return { n: a.length, mean: mean(a), sd: sd(a), min: s[0], max: s[s.length - 1], median: median(a), ...skewKurt(a) }; }
 
   return { sum, mean, variance, sd, cov, pearson, median, sorted, col, rowSums, tP2, chiP, ncdf, ibeta, lgamma,
-    alphaFromVars, itemStats, kr20, kr21, spearmanBrown, guttman, splitHalf, kappa, omega, sem,
+    alphaFromVars, fCdf, fInv, alphaCI, itemStats, kr20, kr21, spearmanBrown, guttman, splitHalf, kappa, omega, sem,
     cvr, cvrModified, cvrCritical, lawsheCritical, cvi, aikenV, extremeGroups, difficultyDiscrimination,
     zScore, tScore, percentileRank, skewKurt, levels, mantelHaenszel, corrMatrix, jacobiEigen, inverse, kmo, bartlett, parallelAnalysis, varimax, efa, describe };
 })();
@@ -458,7 +463,7 @@ function shell() {
   $('#bAcct').onclick = () => go('account');
 }
 function moreSheet() {
-  modal(`<h3>المزيد</h3><div class="stack">${[['bank', 'بنك الأسئلة', 'cards', 'كل أسئلة المادة: بحث وتصفية واختبار سريع'], ['schedules', 'جداول التعزيز وكروت العلماء', 'trophy', 'جرّب FR وVR وFI وVI وشوف السجل التراكمي، وكروتك'], ['tests', 'مكتبة الاختبارات', 'check', 'شخصية، وتقدير ذات، وضغوط، وصمود، ووحدة، وانتباه، وذكاء: مصفوفات ومتسلسلات وتدوير ذهني'], ['know', 'اعرف نفسك', 'heart', 'رحلة بشكل لعبة: المزاج والذاكرة والتركيز والحالة النفسية وحياتك الرقمية'], ['neuro', 'المختبر العصبي (TRIBE v2)', 'flask', 'تماسك عبارات مقياسك وفق التنبؤ العصبي — استكشافي'], ['exam', 'أسئلة موضوعية', 'check', 'صح وخطأ، واختيار من متعدد، وامتحان تجريبي ونموذج محلول'], ['formulas', 'المعادلات', 'sigma', 'كل معادلات الصدق والثبات بأمثلة'], ['laws', 'القوانين الإحصائية', 'sigma', '65 قانونًا من القديم للحديث: من الوسط وت وتحليل التباين إلى SEM وبايز، بمسائل محلولة'], ['practice', 'التدريب', 'cards', 'بطاقات ومطابقة ومسائل حسابية'], ['respond', 'أجب عن مقياس', 'form', 'استخدم كود المقياس الذي أرسله الباحث'], ['me', 'إنجازاتي', 'trophy', 'النقاط والأوسمة والإعدادات'], ['account', 'حسابي', 'user', 'تسجيل الدخول وحفظ التقدم'], ['admin', 'لوحة المسؤول', 'shield', 'للمسؤول فقط: فتح وقفل المراحل ومتابعة النتائج']].map(n => `<button class="linkcard" data-m="${n[0]}"><span class="ic">${ic(n[2])}</span><span><b>${n[1]}</b><span>${n[3]}</span></span></button>`).join('')}</div><div class="row" style="margin-top:12px"><button class="btn ghost" data-close>إغلاق</button></div>`,
+  modal(`<h3>المزيد</h3><div class="stack">${[['bank', 'بنك الأسئلة', 'cards', 'كل أسئلة المادة: بحث وتصفية واختبار سريع'], ['schedules', 'جداول التعزيز وكروت العلماء', 'trophy', 'جرّب FR وVR وFI وVI وشوف السجل التراكمي، وكروتك'], ['tests', 'مكتبة الاختبارات', 'check', 'شخصية، وتقدير ذات، وضغوط، وصمود، ووحدة، وانتباه، وذكاء: مصفوفات ومتسلسلات وتدوير ذهني'], ['know', 'اعرف نفسك', 'heart', 'رحلة بشكل لعبة: المزاج والذاكرة والتركيز والحالة النفسية وحياتك الرقمية'], ['neuro', 'المختبر العصبي (TRIBE v2)', 'flask', 'تماسك عبارات مقياسك وفق التنبؤ العصبي — استكشافي'], ['exam', 'أسئلة موضوعية', 'check', 'صح وخطأ، واختيار من متعدد، وامتحان تجريبي ونموذج محلول'], ['formulas', 'المعادلات', 'sigma', 'كل معادلات الصدق والثبات بأمثلة'], ['laws', 'القوانين الإحصائية', 'sigma', '75 قانونًا من القديم للحديث: من الوسط وت وتحليل التباين إلى SEM وبايز، بمسائل محلولة'], ['practice', 'التدريب', 'cards', 'بطاقات ومطابقة ومسائل حسابية'], ['respond', 'أجب عن مقياس', 'form', 'استخدم كود المقياس الذي أرسله الباحث'], ['me', 'إنجازاتي', 'trophy', 'النقاط والأوسمة والإعدادات'], ['account', 'حسابي', 'user', 'تسجيل الدخول وحفظ التقدم'], ['admin', 'لوحة المسؤول', 'shield', 'للمسؤول فقط: فتح وقفل المراحل ومتابعة النتائج']].map(n => `<button class="linkcard" data-m="${n[0]}"><span class="ic">${ic(n[2])}</span><span><b>${n[1]}</b><span>${n[3]}</span></span></button>`).join('')}</div><div class="row" style="margin-top:12px"><button class="btn ghost" data-close>إغلاق</button></div>`,
     (bg, close) => $$('[data-m]', bg).forEach(b => b.onclick = () => { close(); go(b.dataset.m); }));
 }
 function go(v) { if (v === 'labs' && typeof LABS !== 'undefined') LABS.clear(); if (v === 'learn' && typeof LEARN !== 'undefined') LEARN.clearOpen(); if (v === 'exam' && typeof EXAM !== 'undefined') EXAM.clear(); if (location.hash !== '#' + v) location.hash = v; else route(); }
@@ -561,7 +566,7 @@ VIEWS.home = el => {
     ${[['labs', 'flask', 'المعامل الحسابية', 'ألفا، KR‑20، التجزئة النصفية، كابا، صدق المحتوى، تحليل الفقرات', '--primary', '--primary-soft'],
       ['build', 'build', 'ابنِ مقياسك', 'معالج من 12 خطوة، جمع البيانات مباشرة، وتحليل فوري', '--good', '--good-soft'],
       ['formulas', 'sigma', 'المعادلات', 'كل المعادلات برموزها ومتى تُستخدم وأمثلة محلولة', '--violet', '--violet-soft'],
-      ['laws', 'sigma', 'القوانين الإحصائية', '65 قانونًا من القديم للحديث بمسائل محلولة وتدريب', '--primary', '--primary-soft'],
+      ['laws', 'sigma', 'القوانين الإحصائية', '75 قانونًا من القديم للحديث بمسائل محلولة وتدريب', '--primary', '--primary-soft'],
       ['practice', 'cards', 'التدريب', 'بطاقات مراجعة، ومطابقة، ومسائل حسابية مولدة', '--amber', '--amber-soft'],
       ['bank', 'cards', 'بنك الأسئلة', 'أكثر من 200 سؤال بإجاباتها: صح وخطأ، واختيار، ومسائل، ومقالي', '--lime', '--lime-soft'],
       ['exam', 'check', 'أسئلة موضوعية والامتحان', 'صح وخطأ واختيار من متعدد بنمط امتحان القسم، ونموذج محلول', '--bad', '--bad-soft']]
@@ -961,9 +966,9 @@ const LABS = (() => {
       $$('[data-m]', el).forEach(b => b.onclick = () => { mode = b.dataset.m; draw(); });
       const inp = $('#in', el), res = $('#res', el);
       if (mode === 'var') {
-        inp.innerHTML = `<div class="grid3">${num('k', 'عدد العبارات k', 10)}${num('sv', 'مجموع تباينات العبارات Σσ²ᵢ', 8)}${num('tv', 'تباين الدرجة الكلية σ²ₓ', 30)}</div>`;
-        const run = () => { const k = v('k'), sv = v('sv'), tv = v('tv'); if (!(k > 1 && tv > 0)) return out(res, '<div class="notice warn">أدخل k أكبر من 1 وتباينًا كليًا موجبًا.</div>'); const a = PSY.alphaFromVars(k, sv, tv), [c, t] = relVerdict(a); mark('alpha');
-          out(res, `<div class="kpis"><div class="tile hl"><small>ألفا كرونباخ</small><b>${fmt(a, 3)}</b></div></div><div class="verdict ${c}">${t}</div><div class="f">α = (${k} ÷ ${k - 1}) × (1 − ${sv} ÷ ${tv}) = ${fmt(k / (k - 1), 3)} × ${fmt(1 - sv / tv, 3)} = ${fmt(a, 3)}</div>`); };
+        inp.innerHTML = `<div class="grid3">${num('k', 'عدد العبارات k', 10)}${num('sv', 'مجموع تباينات العبارات Σσ²ᵢ', 8)}${num('tv', 'تباين الدرجة الكلية σ²ₓ', 30)}${num('nn', 'عدد المستجيبين n (لفترة الثقة)', 100)}</div>`;
+        const run = () => { const k = v('k'), sv = v('sv'), tv = v('tv'); if (!(k > 1 && tv > 0)) return out(res, '<div class="notice warn">أدخل k أكبر من 1 وتباينًا كليًا موجبًا.</div>'); const a = PSY.alphaFromVars(k, sv, tv), [c, t] = relVerdict(a), n = v('nn'), ci = PSY.alphaCI(a, n, k); mark('alpha');
+          out(res, `<div class="kpis"><div class="tile hl"><small>ألفا كرونباخ</small><b>${fmt(a, 3)}</b></div><div class="tile"><small>فترة الثقة 95%</small><b class="ltr">${ci ? '[' + fmt(ci.lo, 3) + ', ' + fmt(ci.hi, 3) + ']' : '—'}</b></div><div class="tile"><small>المستجيبون n</small><b>${n > 0 ? n : '—'}</b></div><div class="tile"><small>العبارات k</small><b>${k}</b></div></div><div class="verdict ${c}">${t}</div><p class="small muted" style="margin:0">${ci ? 'فترة الثقة بطريقة فيلدت (Feldt, 1965) المبنية على توزيع F بدرجات حرية ' + ci.d1 + ' و' + ci.d2 + '.' : 'فترة الثقة لم تُحسب: تحتاج عدد مستجيبين صحيحًا أكبر من 2 وعدد عبارات صحيحًا.'}</p><div class="f">α = (${k} ÷ ${k - 1}) × (1 − ${sv} ÷ ${tv}) = ${fmt(k / (k - 1), 3)} × ${fmt(1 - sv / tv, 3)} = ${fmt(a, 3)}</div>`); };
         $$('input', inp).forEach(i => i.oninput = run); run(); return;
       }
       inp.innerHTML = matrixInput('mx', EX_LIK) + `<div class="row"><button class="btn sm ghost" data-ex="lik">مثال ليكرت (10 × 5)</button><button class="btn sm ghost" data-ex="big">بيانات محاكاة (60 × 8)</button></div>`;
@@ -973,13 +978,13 @@ const LABS = (() => {
         const m = parseMatrix(ta.value); if (m.error) return out(res, `<div class="notice warn">${m.error}</div>`);
         if (m.n < 3 || m.k < 2) return out(res, '<div class="notice warn">تحتاج 3 مستجيبين وعبارتين على الأقل.</div>');
         const s = PSY.itemStats(m.rows), [c, t] = relVerdict(s.alpha), names = m.head && m.head.length === m.k ? m.head : s.itemMean.map((_, i) => 'ع' + (i + 1));
-        const sh = PSY.splitHalf(m.rows); mark('alpha');
-        out(res, `<div class="kpis"><div class="tile hl"><small>ألفا كرونباخ</small><b>${fmt(s.alpha, 3)}</b></div><div class="tile"><small>المستجيبون n</small><b>${m.n}</b></div><div class="tile"><small>العبارات k</small><b>${m.k}</b></div><div class="tile"><small>متوسط الدرجة الكلية</small><b>${fmt(s.totalMean)}</b></div><div class="tile"><small>الانحراف المعياري</small><b>${fmt(s.totalSd)}</b></div><div class="tile"><small>سبيرمان–براون</small><b>${fmt(sh.sb, 3)}</b></div></div>
+        const sh = PSY.splitHalf(m.rows), ci = PSY.alphaCI(s.alpha, m.n, m.k); mark('alpha');
+        out(res, `<div class="kpis"><div class="tile hl"><small>ألفا كرونباخ</small><b>${fmt(s.alpha, 3)}</b></div><div class="tile"><small>فترة الثقة 95%</small><b class="ltr">${ci ? '[' + fmt(ci.lo, 3) + ', ' + fmt(ci.hi, 3) + ']' : '—'}</b></div><div class="tile"><small>المستجيبون n</small><b>${m.n}</b></div><div class="tile"><small>العبارات k</small><b>${m.k}</b></div><div class="tile"><small>متوسط الدرجة الكلية</small><b>${fmt(s.totalMean)}</b></div><div class="tile"><small>الانحراف المعياري</small><b>${fmt(s.totalSd)}</b></div><div class="tile"><small>سبيرمان–براون</small><b>${fmt(sh.sb, 3)}</b></div></div>
           <div class="verdict ${c}">الثبات ${t}${s.alpha > 0.95 ? ' — قيمة مرتفعة جدًا قد تعني تكرار العبارات' : ''}</div>
           <section class="card"><h3>${ic('chart')} إحصاءات العبارات</h3>${tableHTML(['العبارة', 'المتوسط', 'الانحراف', 'الارتباط المصحح', 'ألفا عند الحذف', 'الحكم'], names.map((nm, j) => { const bad = s.rit[j] < 0.3, up = s.alphaIfDeleted[j] > s.alpha + 0.005; return { cls: bad ? 'flag' : '', cells: [esc(nm), N(s.itemMean[j]), N(s.itemSd[j]), N(s.rit[j]), N(s.alphaIfDeleted[j], 3), bad ? '<span class="chip bad">راجع العبارة (r < 0.30)</span>' : up ? '<span class="chip warn">حذفها يرفع ألفا</span>' : '<span class="chip good">جيدة</span>'] }; }))}
           ${barSVG(s.rit, names, { ref: 0.3, refLabel: '0.30', max: 1, label: 'الارتباط المصحح', color: x => x < 0.3 ? 'var(--bad)' : 'var(--primary)' })}</section>
-          <details class="steps"><summary>خطوات الحل</summary><div class="f">Σσ²ᵢ = ${s.itemVar.map(x => fmt(x)).join(' + ')} = ${fmt(s.sumItemVar, 3)}</div><div class="f">σ²ₓ = ${fmt(s.totalVar, 3)}</div><div class="f">α = (${m.k} ÷ ${m.k - 1}) × (1 − ${fmt(s.sumItemVar, 3)} ÷ ${fmt(s.totalVar, 3)}) = ${fmt(s.alpha, 3)}</div><p class="small muted">التباينات محسوبة بقسمة مجموع المربعات على (n − 1) كما في SPSS. الارتباط المصحح هو ارتباط العبارة بمجموع باقي العبارات بعد استبعادها.</p></details>
-          ${apa(`بلغ معامل ألفا كرونباخ للمقياس (ن = ${m.n}، ${m.k} عبارات) α = ${dec(s.alpha)}، وهي قيمة تدل على ثبات ${t.split(' ')[0]}، وتراوحت معاملات الارتباط المصححة بين العبارات والدرجة الكلية بين ${dec(Math.min(...s.rit))} و${dec(Math.max(...s.rit))}.`)}`);
+          <details class="steps"><summary>خطوات الحل</summary><div class="f">Σσ²ᵢ = ${s.itemVar.map(x => fmt(x)).join(' + ')} = ${fmt(s.sumItemVar, 3)}</div><div class="f">σ²ₓ = ${fmt(s.totalVar, 3)}</div><div class="f">α = (${m.k} ÷ ${m.k - 1}) × (1 − ${fmt(s.sumItemVar, 3)} ÷ ${fmt(s.totalVar, 3)}) = ${fmt(s.alpha, 3)}</div>${ci ? `<div class="f">فترة الثقة 95% (Feldt, 1965): 1 − (1 − α) × F، بدرجات حرية ${ci.d1} و${ci.d2} = [${fmt(ci.lo, 3)}, ${fmt(ci.hi, 3)}]</div>` : ''}<p class="small muted">التباينات محسوبة بقسمة مجموع المربعات على (n − 1) كما في SPSS. الارتباط المصحح هو ارتباط العبارة بمجموع باقي العبارات بعد استبعادها.</p></details>
+          ${apa(`بلغ معامل ألفا كرونباخ للمقياس (ن = ${m.n}، ${m.k} عبارات) α = ${dec(s.alpha)}${ci ? `، بفترة ثقة 95% [${dec(ci.lo)}، ${dec(ci.hi)}]` : ''}، وهي قيمة تدل على ثبات ${t.split(' ')[0]}، وتراوحت معاملات الارتباط المصححة بين العبارات والدرجة الكلية بين ${dec(Math.min(...s.rit))} و${dec(Math.max(...s.rit))}.`)}`);
         bindCopy(res);
       };
       ta.oninput = run; run();
@@ -1108,11 +1113,11 @@ const LABS = (() => {
   };
   /* ---------- omega ---------- */
   R.omega = el => {
-    el.innerHTML = `<div class="card stack"><div class="field"><label class="fl" for="ld">التشبعات المعيارية للعبارات (مفصولة بمسافة)</label><input type="text" id="ld" class="ltr" value="0.70 0.65 0.80 0.60 0.75"></div></div><div id="ro" class="stack"></div>`;
-    const run = () => { const L = parseNums($('#ld', el).value).filter(x => Math.abs(x) <= 1), r = $('#ro', el); if (L.length < 2) return out(r, '<div class="notice warn">أدخل تشبعين على الأقل بين −1 و1.</div>'); const o = PSY.omega(L), [c, t] = relVerdict(o.omega); mark('omega');
-      out(r, `<div class="kpis"><div class="tile hl"><small>أوميغا ω (= الثبات المركب CR)</small><b>${fmt(o.omega, 3)}</b></div><div class="tile ${o.ave >= 0.5 ? 'good' : 'bad'}"><small>متوسط التباين المستخلص AVE</small><b>${fmt(o.ave, 3)}</b></div><div class="tile"><small>√AVE</small><b>${fmt(Math.sqrt(o.ave), 3)}</b></div></div><div class="verdict ${c}">الثبات ${t}؛ ${o.ave >= 0.5 ? 'والصدق التقاربي متحقق (AVE ≥ 0.50)' : 'والصدق التقاربي غير متحقق (AVE < 0.50)'}</div>
+    el.innerHTML = `<div class="card stack"><div class="field"><label class="fl" for="ld">التشبعات المعيارية للعبارات (مفصولة بمسافة)</label><input type="text" id="ld" class="ltr" value="0.70 0.65 0.80 0.60 0.75"></div><div class="field"><label class="fl" for="on">حجم العينة n التي استُخرجت منها التشبعات (اختياري)</label><input type="number" id="on" class="ltr" min="1" step="1" inputmode="numeric"></div></div><div id="ro" class="stack"></div>`;
+    const run = () => { const L = parseNums($('#ld', el).value).filter(x => Math.abs(x) <= 1), r = $('#ro', el); if (L.length < 2) return out(r, '<div class="notice warn">أدخل تشبعين على الأقل بين −1 و1.</div>'); const o = PSY.omega(L), [c, t] = relVerdict(o.omega), nO = Math.round(+$('#on', el).value) || 0; mark('omega');
+      out(r, `<div class="kpis"><div class="tile hl"><small>أوميغا ω (= الثبات المركب CR)</small><b>${fmt(o.omega, 3)}</b></div><div class="tile ${o.ave >= 0.5 ? 'good' : 'bad'}"><small>متوسط التباين المستخلص AVE</small><b>${fmt(o.ave, 3)}</b></div><div class="tile"><small>√AVE</small><b>${fmt(Math.sqrt(o.ave), 3)}</b></div><div class="tile"><small>العبارات k</small><b>${L.length}</b></div><div class="tile"><small>المستجيبون n</small><b>${nO > 0 ? nO : '—'}</b></div></div><div class="verdict ${c}">الثبات ${t}؛ ${o.ave >= 0.5 ? 'والصدق التقاربي متحقق (AVE ≥ 0.50)' : 'والصدق التقاربي غير متحقق (AVE < 0.50)'}</div><p class="small muted" style="margin:0">فترة الثقة لأوميغا غير محسوبة هنا: حسابها يحتاج البيانات الخام أو الأخطاء المعيارية للتشبعات (بالـ bootstrap مثلًا)، والتشبعات وحدها لا تكفي. ${nO > 0 ? 'التشبعات مأخوذة من عينة حجمها n = ' + nO + '.' : 'اكتب حجم العينة التي استُخرجت منها التشبعات ليظهر مع النتيجة.'}</p>
         <details class="steps"><summary>خطوات الحل</summary><div class="f">Σλ = ${fmt(o.sl, 3)} ← (Σλ)² = ${fmt(o.sl2, 3)}</div><div class="f">Σθ = Σ(1 − λ²) = ${o.theta.map(x => fmt(x, 3)).join(' + ')} = ${fmt(o.st, 3)}</div><div class="f">ω = ${fmt(o.sl2, 3)} ÷ (${fmt(o.sl2, 3)} + ${fmt(o.st, 3)}) = ${fmt(o.omega, 3)}</div><div class="f">AVE = متوسط λ² = ${fmt(o.ave, 3)}</div><p class="small muted">للصدق التمييزي (فورنل ولاركر، 1981): يجب أن يزيد √AVE لكل بعد على ارتباطه بالأبعاد الأخرى.</p></details>`); };
-    $('#ld', el).oninput = run; run();
+    $('#ld', el).oninput = run; $('#on', el).oninput = run; run();
   };
   /* ---------- DIF ---------- */
   R.dif = el => {
