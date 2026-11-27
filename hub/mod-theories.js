@@ -15,7 +15,7 @@
     infoproc: [590, 110, 92, 52], baddeley: [508, 196, 60, 138], ef: [612, 300, 128, 206],
     bandura: [420, 62, 190, 300], cogload: [392, 330, 300, 340], srl: [316, 168, 84, 318],
     sdt: [196, 74, 250, 428], mindset: [118, 172, 342, 486],
-    chc: [214, 290, 72, 416], gardner: [70, 318, 150, 506], renzulli: [150, 384, 52, 520] };
+    chc: [214, 290, 72, 416], gardner: [112, 318, 150, 506], renzulli: [150, 384, 52, 520] };
   var LINKS = [['piaget', 'vygotsky'], ['piaget', 'erikson'], ['erikson', 'bronfenbrenner'], ['erikson', 'attachment'], ['infoproc', 'baddeley'], ['baddeley', 'ef'],
     ['bandura', 'srl'], ['srl', 'cogload'], ['sdt', 'mindset'], ['chc', 'gardner'], ['chc', 'renzulli']];
 
@@ -67,17 +67,17 @@
   function evMark(status) { var e = ev(status); return '<span class="mth-ev" data-ev="' + e.level + '">' + rings(e.level) + '<span>' + esc(e.id) + '</span></span>'; }
   function star(r) { var k = Math.round(r * 15) / 100; return 'M0 ' + -r + 'Q' + k + ' ' + -k + ' ' + r + ' 0Q' + k + ' ' + k + ' 0 ' + r + 'Q' + -k + ' ' + k + ' ' + -r + ' 0Q' + -k + ' ' + -k + ' 0 ' + -r + 'Z'; }
   function chart() {
-    var tall = window.matchMedia && window.matchMedia('(max-width:700px)').matches, o = tall ? 2 : 0, w = tall ? 400 : 1000, h = tall ? 560 : 430;
+    var tall = window.matchMedia && window.matchMedia('(max-width:700px)').matches, o = tall ? 2 : 0, w = tall ? 400 : 1000, h = tall ? 560 : 830, ky = tall ? 1 : 1.95, kz = tall ? 1 : 1.35;
     var s = '<svg class="mth-chart' + (tall ? ' tall' : '') + '" viewBox="0 0 ' + w + ' ' + h + '" role="group" aria-label="خريطة النظريات: كل نجمة نظرية، وكل مجموعة عيلة">';
-    for (var g = 1; g < 5; g++) s += '<path class="grid" d="M0 ' + (h * g / 5) + 'Q' + w / 2 + ' ' + (h * g / 5 - 46) + ' ' + w + ' ' + (h * g / 5) + '"/>';
-    LINKS.forEach(function (l) { var a = POS[l[0]], b = POS[l[1]]; s += '<line class="link" data-a="' + l[0] + '" data-b="' + l[1] + '" x1="' + a[o] + '" y1="' + a[o + 1] + '" x2="' + b[o] + '" y2="' + b[o + 1] + '"/>'; });
+    for (var g = 1; g < 5; g++) s += '<path class="grid" d="M0 ' + (h * g / 5) + 'Q' + w / 2 + ' ' + (h * g / 5 - 60) + ' ' + w + ' ' + (h * g / 5) + '"/>';
+    LINKS.forEach(function (l) { var a = POS[l[0]], b = POS[l[1]]; s += '<line class="link" data-a="' + l[0] + '" data-b="' + l[1] + '" x1="' + a[o] + '" y1="' + Math.round(a[o + 1] * ky) + '" x2="' + b[o] + '" y2="' + Math.round(b[o + 1] * ky) + '"/>'; });
     ORDER.forEach(function (t, i) {
       var p = POS[t.id], f = fam(t.family), big = ev(t.evidence.status).level;
       s += '<a class="mth-star t-' + f.tone + '" href="#theories/t/' + t.id + '" data-id="' + t.id + '" aria-label="' + esc(t.title.ar + '، ' + t.evidence.status) + '">' +
-        '<g transform="translate(' + p[o] + ' ' + p[o + 1] + ')"><circle class="hit" r="' + (tall ? 31 : 30) + '"/><circle class="halo" r="' + (9 + big * 3) + '"/>' +
-        '<path class="pt" data-tw="' + (i % 5) + '" d="' + star(7 + big * 2) + '"/>' +
-        '<text class="no" y="-' + (16 + big * 2) + '" text-anchor="middle">' + t.no + '</text>' +
-        '<text class="nm" y="' + (30 + big * 2) + '" text-anchor="middle">' + esc(SHORT[t.id]) + '</text></g></a>';
+        '<g transform="translate(' + p[o] + ' ' + Math.round(p[o + 1] * ky) + ')"><circle class="hit" r="' + (tall ? 31 : 38) + '"/><circle class="halo" r="' + Math.round((9 + big * 3) * kz) + '"/>' +
+        '<path class="pt" data-tw="' + (i % 5) + '" d="' + star(Math.round((7 + big * 2) * kz)) + '"/>' +
+        '<text class="no" y="-' + Math.round((16 + big * 2) * kz) + '" text-anchor="middle">' + t.no + '</text>' +
+        '<text class="nm" y="' + Math.round((30 + big * 2) * kz) + '" text-anchor="middle">' + esc(SHORT[t.id]) + '</text></g></a>';
     });
     return s + '</svg>';
   }
@@ -103,14 +103,14 @@
   function home(main) {
     var n = ORDER.length, acts = 0; ORDER.forEach(function (t) { acts += t.activities.length; });
     var h = '<header class="head mth-head"><p class="mth-kicker">مكتبة النظريات النفسية</p>' +
-      '<h1 class="mega"><span class="num">' + n + '</span> نظرية <em>تشتغل بيها</em> مش تحفظها</h1>' +
+      '<h1 class="mega"><span class="num">' + n + '</span> نظرية <em>تشتغل بيها</em><br>مش تحفظها</h1>' +
       '<p class="lead">كل نظرية هنا معاها: دليلها قوي قد إيه، نقدها، مثال من الحياة، وأنشطة تتعمل في البيت أو الفصل مع حدود تفسيرها. مفيش حاجة هنا تشخيص ولا اختبار ذكاء.</p></header>';
     h += '<div class="mth-top"><section class="mth-sky" aria-label="خريطة النظريات"><div class="mth-sky-in">' + chart() +
       '<p class="mth-sky-note">حجم النجمة على قد قوة الدليل. دوس على أي نجمة تفتح نظريتها.</p></div></section>' +
       '<div class="mth-doors">' +
-      '<a class="block sun mth-door" href="#theories/map"><span class="block-label">' + acts + ' نشاط من ' + n + ' نظرية</span><strong>دوّر بالنشاط أو بالمهارة</strong>' + GLYPH.map + '</a>' +
-      '<a class="block violet mth-door" href="#theories/quiz"><span class="block-label">' + T.vignettes.length + ' موقف قصير</span><strong>أنهي نظرية بتفسّر الحالة دي؟</strong>' + GLYPH.quiz + '</a>' +
-      '<a class="block coral mth-door" href="#theories/models"><span class="block-label">' + T.models.length + ' قوالب تتملي وتتطبع</span><strong>نماذج تطبيقية للتدريب</strong>' + GLYPH.models + '</a>' +
+      '<a class="block sun mth-door" href="#theories/map">' + GLYPH.map + '<span class="block-label">' + acts + ' نشاط من ' + n + ' نظرية</span><strong>دوّر بالنشاط أو بالمهارة</strong></a>' +
+      '<a class="block violet mth-door" href="#theories/quiz">' + GLYPH.quiz + '<span class="block-label">' + T.vignettes.length + ' موقف قصير</span><strong>أنهي نظرية بتفسّر الحالة دي؟</strong></a>' +
+      '<a class="block coral mth-door" href="#theories/models">' + GLYPH.models + '<span class="block-label">' + T.models.length + ' قوالب تتملي وتتطبع</span><strong>نماذج تطبيقية للتدريب</strong></a>' +
       '</div></div>';
     h += '<section class="mth-find" aria-label="تصفية النظريات"><div class="mth-search"><label for="mth-q">دوّر باسم النظرية أو صاحبها، بالعربي أو الإنجليزي</label>' +
       '<input type="text" id="mth-q" inputmode="search" autocomplete="off" value="' + esc(filt.q) + '" placeholder="مثال: Piaget أو التعلّق"></div>' +
@@ -407,8 +407,8 @@
     function bars() { $$('.mth-bar i', main).forEach(function (b) { b.style.setProperty('transform', 'scaleX(' + (+b.getAttribute('data-w') || 0) + ')'); }); }
     function draw() {
       var F = m.form, th = m.theory && BY[m.theory];
-      main.innerHTML = subnav('models') + '<div class="mth-noprint"><header class="head"><p class="mth-kicker"><a href="#theories/models">نماذج تطبيقية</a> / ' + ltr(m.title.en) + '</p><h1>' + esc(m.title.ar) + '</h1><p class="lead">' + esc(m.say) + '</p>' +
-        (th ? '<p class="small">مبني على: <a href="#theories/t/' + th.id + '">' + esc(th.title.ar) + '</a></p>' : '') + '</header>' +
+      main.innerHTML = subnav('models') + '<div class="mth-noprint"><header class="block ' + m.tone + ' mth-mhead"><p class="block-label"><a href="#theories/models">نماذج تطبيقية</a> / ' + ltr(m.title.en) + '</p><h1>' + esc(m.title.ar) + '</h1><p class="mth-msay">' + esc(m.say) + '</p>' +
+        (th ? '<p>مبني على: <a href="#theories/t/' + th.id + '">' + esc(th.title.ar) + '</a></p>' : '') + '</header>' +
         '<p class="mth-warn big" role="note">' + H.ic('guide') + '<span><strong>مش أداة تشخيص. </strong>' + esc(m.caution) + '</span></p>' + walk(m) +
         '<section class="mth-form" aria-labelledby="mth-form-h"><h2 id="mth-form-h">قالبك</h2><p class="muted">اكتب رمز بدل اسم الطفل. اللي بتكتبه بيتحفظ على الجهاز ده بس لما تدوس «احفظ».</p>' +
         '<form id="mth-f" novalidate><div class="mth-fields">' + F.fields.map(function (x) { return fieldHtml(x, rec.f[x.k]); }).join('') + '</div>' +
