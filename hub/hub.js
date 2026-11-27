@@ -84,6 +84,7 @@
     trash: '<path d="M4 6h12M8 6V4.200h4V6M5.500 6l.7 10h7.600l.7-10M8.500 9v4.500M11.500 9v4.500"/>',
     clock: '<circle cx="10" cy="10" r="6.500"/><path d="M10 6.500V10l2.300 1.500"/>'
   };
+  ICONS.theories = ICONS.library; ICONS.kids = ICONS.games; ICONS.decide = ICONS.ops; ICONS.explore = ICONS.opps; ICONS.assistant = ICONS.guide;
   function ic(name, cls) { return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' + (ICONS[name] || '') + '</svg>'; }
 
   /* ---------- roles & nav ---------- */
@@ -455,7 +456,7 @@
       '<section class="scene s1"><h1 class="s1-title"><span class="s1-brand">' + esc(BRAND) + '</span><span class="s1-line">من القدرة</span> <span class="s1-line">للإنجاز</span></h1>' +
       '<p class="s1-lead">منصة واحدة للباحث والأخصائي وولي الأمر. بتمشي معاك من أول سؤال لحد نتيجة تقدر تثبتها.</p><p class="s1-cue" aria-hidden="true"><span>انزل</span><i></i></p></section>' +
       marquee(false) + '<div class="story"><div class="stage">' + morphStage() + '</div>' + ch.map(function (c, i) {
-        return '<section class="scene ch ch' + (i + 1) + '"><div class="ch-in"><div class="ch-glyph rv">' + motif(c[3]) + '</div><p class="ch-no num rv">' + pad2(i + 1) + '</p><h2 class="ch-word rv"><span class="mk"><span>' + c[0] + '</span></span></h2><p class="ch-say rv">' + c[1] + '</p><ol class="ch-q">' + c[2].map(function (q) { return '<li class="rv"><span class="num">' + pad2(q + 1) + '</span>' + QUESTIONS[q] + '</li>'; }).join('') + '</ol></div></section>';
+        return '<section class="scene ch ch' + (i + 1) + '"><div class="ch-in"><div class="ch-glyph rv">' + motif(c[3]) + '</div><p class="ch-no num rv">' + pad2(i + 1) + '</p><h2 class="ch-word rv"><span class="wm"><span>' + c[0] + '</span></span></h2><p class="ch-say rv">' + c[1] + '</p><ol class="ch-q">' + c[2].map(function (q) { return '<li class="rv"><span class="num">' + pad2(q + 1) + '</span>' + QUESTIONS[q] + '</li>'; }).join('') + '</ol></div></section>';
       }).join('') + '</div>' + marquee(true) +
       '<section class="scene s5" id="choose"><h2 class="s5-title">إنت مين؟</h2><p class="s5-lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p>' + roleChoices() + '</section></div>';
   }

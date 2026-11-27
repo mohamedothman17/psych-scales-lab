@@ -182,7 +182,7 @@
       $$('.ch', el).forEach(function (ch) {
         var t = gsap.timeline({ defaults: { ease: 'power3.out' }, scrollTrigger: { trigger: ch.querySelector('.ch-in'), start: 'top 82%', toggleActions: 'play none none reverse' } });
         t.from($$('.ch-no', ch), { opacity: 0, duration: 0.5 }, 0)
-          .from($$('.mk > span', ch), { yPercent: 115, skewY: 9, duration: 1.1, ease: 'expo.out' }, 0)
+          .from($$('.wm > span', ch), { yPercent: 115, skewY: 9, duration: 1.1, ease: 'expo.out' }, 0)
           .from($$('.ch-say', ch), { y: 28, opacity: 0, duration: 0.8 }, 0.25)
           .from($$('.ch-q li', ch), { y: 40, opacity: 0, duration: 0.8, stagger: 0.12 }, 0.4);
       });
