@@ -62,7 +62,7 @@
   function rings(level, cls) {
     var out = '<svg class="mth-rings' + (cls ? ' ' + cls : '') + '" viewBox="-20 -20 40 40" aria-hidden="true" focusable="false">';
     for (var i = 4; i >= 1; i--) out += '<circle r="' + (i * 4.2 + 1) + '" class="' + (i <= level ? 'on' : 'off') + '"/>';
-    return out + '<circle r="1.8" class="dot"/></svg>';
+    return out + '<circle r="1.8" class="mth-c"/></svg>';
   }
   function evMark(status) { var e = ev(status); return '<span class="mth-ev" data-ev="' + e.level + '">' + rings(e.level) + '<span>' + esc(e.id) + '</span></span>'; }
   function star(r) { var k = Math.round(r * 15) / 100; return 'M0 ' + -r + 'Q' + k + ' ' + -k + ' ' + r + ' 0Q' + k + ' ' + k + ' 0 ' + r + 'Q' + -k + ' ' + k + ' ' + -r + ' 0Q' + -k + ' ' + -k + ' 0 ' + -r + 'Z'; }
@@ -74,7 +74,7 @@
     ORDER.forEach(function (t, i) {
       var p = POS[t.id], f = fam(t.family), big = ev(t.evidence.status).level;
       s += '<a class="mth-star t-' + f.tone + '" href="#theories/t/' + t.id + '" data-id="' + t.id + '" aria-label="' + esc(t.title.ar + '، ' + t.evidence.status) + '">' +
-        '<g transform="translate(' + p[o] + ' ' + Math.round(p[o + 1] * ky) + ')"><circle class="hit" r="' + (tall ? 31 : 38) + '"/><circle class="halo" r="' + Math.round((9 + big * 3) * kz) + '"/>' +
+        '<g transform="translate(' + p[o] + ' ' + Math.round(p[o + 1] * ky) + ')"><circle class="hit" r="' + (tall ? 31 : 38) + '"/><circle class="mth-halo" r="' + Math.round((9 + big * 3) * kz) + '"/>' +
         '<path class="pt" data-tw="' + (i % 5) + '" d="' + star(Math.round((7 + big * 2) * kz)) + '"/>' +
         '<text class="no" y="-' + Math.round((16 + big * 2) * kz) + '" text-anchor="middle">' + t.no + '</text>' +
         '<text class="nm" y="' + Math.round((30 + big * 2) * kz) + '" text-anchor="middle">' + esc(SHORT[t.id]) + '</text></g></a>';
@@ -277,7 +277,7 @@
         }).join('') + '</div>';
       if (picked) {
         var good = picked === v.answer;
-        h += '<div class="mth-fb ' + (good ? 'good' : 'miss') + '" id="mth-fb" tabindex="-1"><h3>' + (good ? 'ده الأقرب فعلاً' : 'مش الأقرب هنا') + '</h3><p>' + esc(v.why) + '</p>' +
+        h += '<div class="mth-fb ' + (good ? 'mth-good' : 'mth-miss') + '" id="mth-fb" tabindex="-1"><h3>' + (good ? 'ده الأقرب فعلاً' : 'مش الأقرب هنا') + '</h3><p>' + esc(v.why) + '</p>' +
           '<h4>نظريتين قدام نفس الموقف</h4><div class="mth-vs">' + v.contrast.map(function (c) {
             var t = BY[c.id]; return '<div><p class="mth-vsh"><a href="#theories/t/' + t.id + '">' + esc(SHORT[t.id]) + '</a> هتتوقع</p><p>' + esc(c.says) + '</p></div>';
           }).join('') + '</div><p class="small">الموقف مكتوب للتدريب. في الواقع أكتر من نظرية بتشرح جزء من نفس الحالة، والحكم بيحتاج معلومات أكتر من فقرة.</p>' +

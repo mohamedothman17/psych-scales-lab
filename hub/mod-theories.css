@@ -26,13 +26,13 @@
 .mth-star{color:var(--t-mint);text-decoration:none;transition:opacity .25s}
 .mth-star.t-lilac{color:var(--t-lilac)} .mth-star.t-sun{color:var(--t-sun)} .mth-star.t-coral{color:var(--t-coral)} .mth-star.t-violet{color:var(--t-violet)}
 .mth-star .hit{fill:transparent}
-.mth-star .halo{fill:currentColor;opacity:.14;transition:opacity .2s,transform .2s;transform-box:fill-box;transform-origin:center}
+.mth-star .mth-halo{fill:currentColor;opacity:.14;transition:opacity .2s,transform .2s;transform-box:fill-box;transform-origin:center}
 .mth-star .pt{fill:currentColor}
 .mth-star .no{fill:var(--sky-ink-3);font:500 15px var(--text);font-variant-numeric:tabular-nums}
 .mth-star .nm{fill:var(--sky-ink);font:600 21px var(--text)}
 .mth-chart.tall .nm{font-size:13px}
 .mth-chart.tall .no{font-size:12px}
-.mth-star:hover .halo,.mth-star:focus-visible .halo{opacity:.36;transform:scale(1.5)}
+.mth-star:hover .mth-halo,.mth-star:focus-visible .mth-halo{opacity:.36;transform:scale(1.5)}
 .mth-star:focus-visible{outline:none}
 .mth-star:focus-visible .hit{stroke:var(--gold);stroke-width:2}
 .mth-star.dim{opacity:.2}
@@ -72,7 +72,7 @@
 .mth-rings{width:26px;height:26px;flex:none;fill:none;stroke:currentColor}
 .mth-rings .on{stroke-width:2.2}
 .mth-rings .off{stroke-width:1;stroke-dasharray:1.5 3;opacity:.55}
-.mth-rings .dot{fill:currentColor;stroke:none}
+.mth-rings .mth-c{fill:currentColor;stroke:none}
 .mth-ev{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:.92rem;color:var(--ink);white-space:nowrap}
 
 /* ---- family sections: a colour block beside an editorial list ---- */
@@ -221,7 +221,7 @@
 .mth-fb{margin-top:26px;padding:26px 28px;border-radius:8px 28px 28px 28px;background:var(--surface-2);border:1px solid var(--line-2)}
 .mth-fb:focus{outline:none}
 .mth-fb h3{font-family:var(--display);font-size:1.4rem;font-weight:800}
-.mth-fb.good h3{color:var(--status)} .mth-fb.miss h3{color:var(--bad)}
+.mth-fb.mth-good h3{color:var(--status)} .mth-fb.mth-miss h3{color:var(--bad)}
 .mth-fb h4{margin:20px 0 6px;font-size:1rem;color:var(--ink-2)}
 .mth-vs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 30px}
 .mth-vs>div{border-top:3px solid var(--ink);padding-top:10px}
