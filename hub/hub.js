@@ -101,7 +101,8 @@
     theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: false },
     kids: { title: 'ألعاب وأنشطة الأطفال', short: 'الألعاب', say: 'ذاكرة، انتباه، استدلال، مرونة، إبداع', roles: ['parent', 'specialist'], ready: false },
     decide: { title: 'بحوث العمليات والقرار', short: 'القرار', say: 'توزيع العينة، الميزانية مقابل القوة، مقارنة البدائل', roles: ['researcher', 'student', 'specialist'], ready: false },
-    explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: false }
+    explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: false },
+    assistant: { title: 'المساعد الذكي', short: 'المساعد', say: 'اسأله عن بحثك، أو خلّيه يشتغل معاك خطوة خطوة', roles: null, ready: false }
   };
   Object.keys(MODS).forEach(function (k) { if (MODS[k].ready) NAV.splice(NAV.length - 1, 0, [k, MODS[k].title, MODS[k].roles, MODS[k].short]); });
   var MOD_VIEWS = {}, MOD_LOADING = {};
