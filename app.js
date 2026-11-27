@@ -573,6 +573,7 @@ VIEWS.home = el => {
       .map(c => `<button class="linkcard" data-go3="${c[0]}" style="--c:var(${c[4]});--s:var(${c[5]})"><span class="ic">${ic(c[1])}</span><span><b>${c[2]}</b><span>${c[3]}</span></span></button>`).join('')}
   </div>
   ${journeyX()}
+  <p class="foot"><a href="hub/">جديد: منصة الباحث والأخصائي وولي الأمر (نسخة تجريبية) ←</a></p>
   <p class="foot">إعداد الطالب: محمد عثمان — الدبلوم الخاص في علم النفس · إشراف: الدكتورة نجاة زكي</p>`;
   $('#hCont').onclick = () => LEARN.open(nx.key);
   $('#hRules2').onclick = () => LEARN.open('rules12');

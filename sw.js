@@ -1,7 +1,7 @@
 /* Offline support: network first, cached copy when offline. Only same-origin GET requests are cached.
    The app shell (CORE) is precached at install. Lazy chunks (lessons, laws, tools, images) are not:
    they are cached the first time they are fetched and stay available offline afterwards. */
-const CACHE = 'psych-scales-lab-55dfc3e0';
+const CACHE = 'psych-scales-lab-7a6ce0e4';
 const RUNTIME = 'psych-scales-lab-runtime';
 const CORE = [
  "./",
@@ -16,7 +16,7 @@ const CORE = [
  "vendor/anim/lenis.min.js",
  "privacy.js?v=2298d6faf6",
  "visits.js?v=60e8c491af",
- "app.js?v=7c7f8b1701",
+ "app.js?v=94cbb1987e",
  "style.css?v=907f9377c5"
 ];
 const SHELL = new Set(CORE.map(u => new URL(u, self.location).href));
