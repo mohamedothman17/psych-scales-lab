@@ -6,7 +6,7 @@
     scales: 'https://mohamedothman17.github.io/psych-scales-lab/',
     stats: 'https://mohamedothman17.github.io/psych-stats-lab/'
   };
-  var KEY = 'hub-v1', THEME_KEY = 'hub-theme';
+  var KEY = 'hub-v1', THEME_KEY = 'hub-theme', INTRO_KEY = 'hub-intro';
   var main = document.getElementById('main');
 
   /* ---------- theme (runs before the first render) ---------- */
@@ -38,7 +38,7 @@
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
   var toastT;
-  function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 3200); }
+  function toast(msg) { var t = document.getElementById('toast'); t.innerHTML = (msg === 'اتحفظ' || msg === 'اتسجّل' ? ic('check') : '') + '<span>' + esc(msg) + '</span>'; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 3200); }
   function today() { return new Date().toISOString().slice(0, 10); }
   function opts(list, cur) { return list.map(function (o) { var v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join(''); }
   function field(id, label, val, hint, type) {
@@ -56,10 +56,12 @@
 
   /* ---------- icons: small inline SVG, drawn with the current text colour ---------- */
   var ICONS = {
-    home: '<path d="M3.5 9.2 10 3.5l6.5 5.7v6.3a1 1 0 0 1-1 1h-3.3v-4.3H7.8v4.3H4.5a1 1 0 0 1-1-1z"/>',
-    projects: '<circle cx="4.5" cy="14.5" r="1.6"/><circle cx="10" cy="5.5" r="1.6"/><circle cx="15.5" cy="12" r="1.6"/><path d="m5.4 13.1 3.7-6.2M11.2 6.7l3.3 4.1"/>',
-    profile: '<circle cx="10" cy="7" r="3"/><path d="M4 16.5c.8-2.8 3.1-4.2 6-4.2s5.2 1.4 6 4.2"/>',
-    family: '<circle cx="10" cy="10" r="6.5"/><path d="M7.3 11.7c.7 1 1.6 1.5 2.7 1.5s2-.5 2.7-1.5"/><circle cx="7.8" cy="8.5" r=".6" fill="currentColor" stroke="none"/><circle cx="12.2" cy="8.5" r=".6" fill="currentColor" stroke="none"/>',
+    home: '<path class="fill" d="M10 1.5Q11.300 8.700 18.500 10 11.300 11.300 10 18.500 8.700 11.300 1.500 10 8.700 8.700 10 1.500Z"/>',
+    projects: '<polygon points="10,1.5 11.300,6 15,3.100 13.400,7.500 18.100,7.400 14.300,10 18.100,12.600 13.400,12.500 15,16.900 11.300,14 10,18.500 8.700,14 5,16.900 6.600,12.500 1.900,12.600 5.700,10 1.900,7.400 6.600,7.500 5,3.100 8.700,6"/>',
+    steps: '<circle cx="4.5" cy="14.5" r="1.6"/><circle cx="10" cy="5.5" r="1.6"/><circle cx="15.5" cy="12" r="1.6"/><path d="m5.4 13.1 3.7-6.2M11.2 6.7l3.3 4.1"/>',
+    profile: '<circle cx="10" cy="10" r="8"/><circle cx="9.500" cy="10.700" r="5"/><circle class="fill" cx="9" cy="11.400" r="2"/>',
+    user: '<circle cx="10" cy="7" r="3"/><path d="M4 16.5c.8-2.8 3.1-4.2 6-4.2s5.2 1.4 6 4.2"/>',
+    family: '<rect x="2.500" y="10.500" width="7" height="7" rx="1.500"/><path d="M6 2.800 9.600 9H2.400z"/><circle cx="14.300" cy="7.200" r="3.200"/><path d="M11.500 17.500a3.500 3.500 0 0 1 7 0z"/>',
     labs: '<path d="M8 3.5v4.6L4.2 15a1 1 0 0 0 .9 1.5h9.8a1 1 0 0 0 .9-1.5L12 8.1V3.5M7 3.5h6M6.3 12h7.4"/>',
     measure: '<path d="M3 13.5 13.5 3l3.5 3.5L6.5 17zM6 10.5 7.5 12M8.5 8l1.5 1.5M11 5.5 12.5 7"/>',
     stats: '<path d="M2.5 15.5c3 0 3.7-11 7.5-11s4.5 11 7.5 11M10 4.5v11"/>',
@@ -110,7 +112,8 @@
     tabs.className = 'tabs n' + (shown.length + (rest.length ? 1 : 0));
     var mb = document.getElementById('moreBtn');
     if (mb) mb.addEventListener('click', function () { var pop = document.getElementById('morePop'); pop.hidden = !pop.hidden; mb.setAttribute('aria-expanded', String(!pop.hidden)); });
-    document.getElementById('roleBtn').innerHTML = ic('profile') + '<span>' + (S.role ? 'أنا: ' + ROLES[S.role] : 'اختار دورك') + '</span>';
+    document.getElementById('roleBtn').innerHTML = ic('user') + '<span>' + (S.role ? 'أنا: ' + ROLES[S.role] : 'اختار دورك') + '</span>';
+    document.getElementById('skipBtn').hidden = !(route === 'home' && !S.role && !introSeen());
     drawTheme();
   }
   function drawTheme() {
@@ -118,11 +121,25 @@
     b.innerHTML = ic(toDark ? 'moon' : 'sun') + '<span>' + label + '</span>';
     b.setAttribute('aria-label', 'بدّل إلى ' + label);
   }
-  document.getElementById('roleBtn').addEventListener('click', function () { location.hash = '#role'; });
+  function calm() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  document.getElementById('roleBtn').addEventListener('click', function () {
+    var c = document.getElementById('choose');
+    if (c) c.scrollIntoView({ behavior: calm() ? 'auto' : 'smooth' }); else location.hash = '#role';
+  });
+  document.getElementById('skipBtn').addEventListener('click', function (e) { e.preventDefault(); setIntro(true); goHome(); });
+  /* Theme change sweeps out from the toggle as a growing circle when the browser can do it. */
   document.getElementById('themeBtn').addEventListener('click', function () {
-    var t = theme === 'dark' ? 'light' : 'dark';
+    var t = theme === 'dark' ? 'light' : 'dark', btn = this, root = document.documentElement;
     try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
-    theme = applyTheme(t); drawTheme();
+    function apply() { theme = applyTheme(t); drawTheme(); window.dispatchEvent(new Event('hub:theme')); }
+    if (!document.startViewTransition || calm()) { apply(); return; }
+    var r = btn.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, far = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    root.classList.add('theming');
+    var vt = document.startViewTransition(apply), done = function () { root.classList.remove('theming'); };
+    vt.ready.then(function () {
+      root.animate({ clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + Math.ceil(far) + 'px at ' + x + 'px ' + y + 'px)'] }, { duration: 560, easing: 'cubic-bezier(.4,0,.2,1)', pseudoElement: '::view-transition-new(root)' });
+    }).catch(function () {});
+    vt.finished.then(done, done); vt.updateCallbackDone.catch(function () {});
   });
 
   /* ---------- drawings: star chart, girih rosette, growth rings ---------- */
@@ -146,7 +163,7 @@
     for (i = 0; i < (mobile ? 30 : 60); i++) dots += '<circle cx="' + f1(r() * W) + '" cy="' + f1(r() * H) + '" r="' + (r() < 0.2 ? 1.1 : 0.6) + '" opacity="' + f1(0.25 + r() * 0.5) + '"/>';
     h += '<g class="sky-field">' + dots + '</g>';
     for (i = 0; i < pts.length - 1; i++) {
-      h += '<path class="' + (done[i] && done[i + 1] ? 'link-done' : (done[i] && i + 1 === nx) ? 'link-next' : 'link-todo') + '" d="M' + pts[i][0] + ' ' + pts[i][1] + 'L' + pts[i + 1][0] + ' ' + pts[i + 1][1] + '"/>';
+      h += '<path class="lk ' + (done[i] && done[i + 1] ? 'link-done" pathLength="1' : (done[i] && i + 1 === nx) ? 'link-next' : 'link-todo') + '" data-d="' + (520 + i * 110) + '" d="M' + pts[i][0] + ' ' + pts[i][1] + 'L' + pts[i + 1][0] + ' ' + pts[i + 1][1] + '"/>';
     }
     STEPS.forEach(function (s, k) {
       var x = pts[k][0], y = pts[k][1], isNext = k === nx;
@@ -155,13 +172,13 @@
       var num = mobile ? '' : '<text class="n" x="' + x + '" y="' + (up ? y + (isNext ? 58 : 30) : y - (isNext ? 50 : 22)) + '">' + pad2(k + 1) + '</text>';
       if (isNext) {
         var a = mobile ? [38, 26, 18, 11, 18, 44] : [58, 40, 27, 16, 26, 62];
-        h += '<g class="st next"><circle cx="' + x + '" cy="' + y + '" r="' + a[0] + '" fill="url(#glow)"/><circle class="halo h3" cx="' + x + '" cy="' + y + '" r="' + a[1] + '"/><circle class="halo h2" cx="' + x + '" cy="' + y + '" r="' + a[2] + '"/><circle class="halo h1" cx="' + x + '" cy="' + y + '" r="' + a[3] + '"/>' +
+        h += '<g class="st next" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + a[0] + '" fill="url(#glow)"/><circle class="halo h3" cx="' + x + '" cy="' + y + '" r="' + a[1] + '"/><circle class="halo h2" cx="' + x + '" cy="' + y + '" r="' + a[2] + '"/><circle class="halo h1" cx="' + x + '" cy="' + y + '" r="' + a[3] + '"/>' +
           '<use href="#star4" x="' + (x - a[4] / 2) + '" y="' + (y - a[4] / 2) + '" width="' + a[4] + '" height="' + a[4] + '"/>' + num + lab(a[5]) + '</g>';
       } else if (done[k]) {
         var z = mobile ? 15 : 19;
-        h += '<g class="st done"><circle cx="' + x + '" cy="' + y + '" r="' + z + '" fill="url(#glowS)"/><use href="#star4" x="' + (x - z / 2) + '" y="' + (y - z / 2) + '" width="' + z + '" height="' + z + '"/>' + num + lab(mobile ? 27 : 31) + '</g>';
+        h += '<g class="st done" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + z + '" fill="url(#glowS)"/><use href="#star4" x="' + (x - z / 2) + '" y="' + (y - z / 2) + '" width="' + z + '" height="' + z + '"/>' + num + lab(mobile ? 27 : 31) + '</g>';
       } else {
-        h += '<g class="st todo"><circle cx="' + x + '" cy="' + y + '" r="' + (mobile ? 3.6 : 4.5) + '"/>' + num + lab(mobile ? 24 : 28) + '</g>';
+        h += '<g class="st todo" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + (mobile ? 3.6 : 4.5) + '"/>' + num + lab(mobile ? 24 : 28) + '</g>';
       }
     });
     return h + '</svg>';
@@ -178,42 +195,81 @@
     var h = '<svg class="ros' + (big ? ' big' : '') + '" viewBox="-104 -104 208 208" role="img" aria-label="' + n + ' من ' + STEPS.length + ' أجزاء مكتملة"><polygon class="g-frame" points="' + frame.join(' ') + '"/>';
     for (i = 0; i < 10; i++) {
       a = ax(i); b = ax(i + 1);
-      h += '<polygon class="g-gap' + (done[i] && done[(i + 1) % 10] ? ' on' : '') + '" points="' + [loc(a - 18, r1, 0), loc(a, u2, -w), loc(a, R, 0), loc(b, R, 0), loc(b, u2, w)].join(' ') + '"/>';
+      h += '<polygon class="g-gap' + (done[i] && done[(i + 1) % 10] ? ' on' : '') + '" data-d="' + (700 + i * 70) + '" points="' + [loc(a - 18, r1, 0), loc(a, u2, -w), loc(a, R, 0), loc(b, R, 0), loc(b, u2, w)].join(' ') + '"/>';
     }
     for (i = 0; i < 10; i++) {
       a = ax(i);
       var cls = done[i] ? 'done' : i === nx ? 'next' : 'todo';
-      h += '<polygon class="g-petal ' + cls + '" points="' + [loc(a, r0, 0), loc(a, u1, w), loc(a, u2, w), loc(a, R, 0), loc(a, u2, -w), loc(a, u1, -w)].join(' ') + '"/>';
+      h += '<polygon class="g-petal ' + cls + '" data-d="' + (300 + i * 70) + '" points="' + [loc(a, r0, 0), loc(a, u1, w), loc(a, u2, w), loc(a, R, 0), loc(a, u2, -w), loc(a, u1, -w)].join(' ') + '"/>';
       if (big) { var t = loc(a, 61, 0).split(','); h += '<text class="g-num ' + cls + '" x="' + t[0] + '" y="' + f1(+t[1] + 4.5) + '">' + (i + 1) + '</text>'; }
     }
-    h += '<polygon class="g-star" points="' + star.join(' ') + '"/><text class="g-big" x="0" y="' + (big ? 6 : 10) + '">' + n + '</text>' + (big ? '<text class="g-of" x="0" y="18">من ' + STEPS.length + '</text>' : '');
+    h += '<polygon class="g-star" points="' + star.join(' ') + '"/><text class="g-big" data-count="' + n + '" x="0" y="' + (big ? 6 : 10) + '">' + n + '</text>' + (big ? '<text class="g-of" x="0" y="18">من ' + STEPS.length + '</text>' : '');
     return h + '</svg>';
   }
 
-  /* Growth rings: 1 to 3 rings for a self-reported level. */
+  /* Growth rings: 1 to 3 rings for a self-reported level, drawn off-centre like a cut trunk. */
   var LEVELS = { 'مبتدئ': 1, 'متوسط': 2, 'متقدم': 3 };
-  function rings(level) {
-    var h = '<svg class="rings" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><circle class="rg-orbit" cx="48" cy="48" r="45"/>';
-    for (var k = 3; k >= 1; k--) h += '<circle class="rg' + (k <= level ? ' on' : '') + '" cx="48" cy="48" r="' + (k * 13 + 2) + '"/>';
+  function rings(level, cls) {
+    var h = '<svg class="rings' + (cls ? ' ' + cls : '') + '" viewBox="0 0 120 120" aria-hidden="true" focusable="false">';
+    for (var k = 3; k >= 1; k--) h += '<circle class="rg r' + k + (k <= level ? ' on' : '') + '" data-d="' + (700 + k * 160) + '" cx="' + (60 - (3 - k) * 3) + '" cy="' + (60 + (3 - k) * 4) + '" r="' + (k * 18 - 2) + '"/>';
     return h + '</svg>';
   }
-  var TOYS = '<svg class="toys" viewBox="0 0 200 220" aria-hidden="true" focusable="false"><rect class="toy-a" x="28" y="128" width="78" height="78" rx="14"/><circle class="toy-w" cx="54" cy="158" r="5"/><circle class="toy-w" cx="82" cy="158" r="5"/><path class="toy-smile" d="M54 176c8 9 20 9 28 0"/><path class="toy-b" d="M112 206a44 44 0 0 1 88 0z"/><path class="toy-c" d="M34 128 70 62l36 66z"/><circle class="toy-d" cx="150" cy="118" r="30"/><circle class="toy-e" cx="150" cy="118" r="12"/><rect class="toy-w" x="20" y="14" width="40" height="40" rx="10" transform="rotate(-14 40 34)"/></svg>';
+  /* Girih geometry at scale k around 0,0: frame, ten petals, the gaps between them, the central star. */
+  function girih(k) {
+    var R = 100 * k, r1 = 44 * k, r0 = 25 * k, u2 = 73 * k, rad = Math.PI / 180, u1 = r1 * Math.cos(18 * rad), w = r1 * Math.sin(18 * rad), o = { frame: [], star: [], gaps: [], petals: [], tips: [] }, i, a, b;
+    function loc(ang, u, v) { var c = Math.cos(ang * rad), s = Math.sin(ang * rad); return f1(u * c - v * s) + ',' + f1(u * s + v * c); }
+    for (i = 0; i < 10; i++) {
+      a = -90 - 36 * i; b = a - 36;
+      o.frame.push(loc(a, R, 0)); o.star.push(loc(a, r0, 0)); o.star.push(loc(a - 18, r1, 0));
+      o.gaps.push([loc(a - 18, r1, 0), loc(a, u2, -w), loc(a, R, 0), loc(b, R, 0), loc(b, u2, w)].join(' '));
+      o.petals.push([loc(a, r0, 0), loc(a, u1, w), loc(a, u2, w), loc(a, R, 0), loc(a, u2, -w), loc(a, u1, -w)].join(' '));
+      o.tips.push(loc(a, R, 0));
+    }
+    return o;
+  }
+  /* A quiet ground of interlocking rosettes, used as texture behind colour blocks. */
+  function tessellation(cls) {
+    var W = 640, H = 420, D = 200 * Math.cos(18 * Math.PI / 180), e2 = [D * Math.cos(72 * Math.PI / 180), -D * Math.sin(72 * Math.PI / 180)], g = girih(1), d = '', i, j;
+    function add(pts, x, y) { d += 'M' + pts.map(function (p) { var q = p.split(','); return f1(+q[0] + x) + ' ' + f1(+q[1] + y); }).join('L') + 'Z'; }
+    for (i = -3; i <= 5; i++) for (j = -3; j <= 5; j++) {
+      var x = i * D + j * e2[0], y = 60 + j * e2[1];
+      if (x < -110 || x > W + 110 || y < -110 || y > H + 110) continue;
+      add(g.star, x, y); add(g.frame, x, y); g.petals.forEach(function (p) { add(p.split(' '), x, y); });
+    }
+    return '<svg class="tess' + (cls ? ' ' + cls : '') + '" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"><path d="' + d + '"/></svg>';
+  }
+  var TOYS = '<svg class="toys" viewBox="0 0 200 220" aria-hidden="true" focusable="false"><g class="toy t1"><rect class="toy-w" x="20" y="14" width="40" height="40" rx="10" transform="rotate(-14 40 34)"/></g><g class="toy t2"><path class="toy-b" d="M112 206a44 44 0 0 1 88 0z"/></g><g class="toy t3"><circle class="toy-d" cx="150" cy="118" r="30"/><circle class="toy-e" cx="150" cy="118" r="12"/></g><g class="toy t4"><rect class="toy-a" x="28" y="128" width="78" height="78" rx="14"/><g class="toy-eyes"><circle class="toy-w" cx="54" cy="158" r="5"/><circle class="toy-w" cx="82" cy="158" r="5"/></g><path class="toy-smile" d="M54 176c8 9 20 9 28 0"/></g><g class="toy t5"><path class="toy-c" d="M34 128 70 62l36 66z"/></g></svg>';
+  /* The three motifs as large glyphs: stars (discover), rosette (connect), rings (grow). */
+  function motif(name) {
+    if (name === 'star') return '<svg class="motif" viewBox="-60 -60 120 120" aria-hidden="true" focusable="false"><path class="mo-line" d="M-38-20 2 6 34-30M2 6-14 40"/><use href="#star4" x="-52" y="-34" width="28" height="28"/><use href="#star4" x="-17" y="-13" width="38" height="38"/><use href="#star4" x="24" y="-40" width="20" height="20"/><use href="#star4" x="-23" y="31" width="18" height="18"/></svg>';
+    if (name === 'rosette') { var g = girih(0.5); return '<svg class="motif" viewBox="-60 -60 120 120" aria-hidden="true" focusable="false"><polygon class="mo-frame" points="' + g.frame.join(' ') + '"/>' + g.petals.map(function (p, i) { return '<polygon class="mo-petal' + (i % 2 ? ' alt' : '') + '" points="' + p + '"/>'; }).join('') + '<polygon class="mo-core" points="' + g.star.join(' ') + '"/></svg>'; }
+    if (name === 'rings') return '<svg class="motif" viewBox="0 0 120 120" aria-hidden="true" focusable="false"><circle class="mo-r r3" cx="60" cy="60" r="52"/><circle class="mo-r r2" cx="57" cy="64" r="35"/><circle class="mo-r r1" cx="54" cy="68" r="17"/></svg>';
+    return TOYS;
+  }
 
   /* ---------- views ---------- */
   var V = {};
 
-  V.role = function () {
-    var cards = [
-      ['researcher', 'باحث', 'ماجستير أو دكتوراه أو باحث مستقل. عاوز تمشي بمشروعك من السؤال للتحليل.', 'projects'],
-      ['student', 'طالب', 'بتدرس علم نفس وعاوز تتعلم القياس والإحصاء وتجرّب مشروع صغير.', 'library'],
-      ['specialist', 'أخصائي', 'بتتابع حالات أو أطفال، وعاوز أنشطة وخطط متابعة مبنية على أساس علمي.', 'guide'],
-      ['parent', 'ولي أمر', 'عاوز أنشطة تنمّي قدرات ابنك أو بنتك (من أولى لسادسة ابتدائي) وتتابع تقدّمه.', 'family']
-    ];
-    main.innerHTML = '<header class="head"><h1>إنت مين؟</h1><p class="lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p></header><div class="roles">' + cards.map(function (c) {
+  var ROLE_CARDS = [
+    ['researcher', 'باحث', 'ماجستير أو دكتوراه أو باحث مستقل. عاوز تمشي بمشروعك من السؤال للتحليل.', 'night', 'star'],
+    ['student', 'طالب', 'بتدرس علم نفس وعاوز تتعلم القياس والإحصاء وتجرّب مشروع صغير.', 'violet', 'rosette'],
+    ['specialist', 'أخصائي', 'بتتابع حالات أو أطفال، وعاوز أنشطة وخطط متابعة مبنية على أساس علمي.', 'sun', 'rings'],
+    ['parent', 'ولي أمر', 'عاوز أنشطة تنمّي قدرات ابنك أو بنتك (من أولى لسادسة ابتدائي) وتتابع تقدّمه.', 'mint', 'toys']
+  ];
+  function roleChoices() {
+    return '<div class="choices">' + ROLE_CARDS.map(function (c, i) {
       var on = S.role === c[0];
-      return '<button class="role-card' + (on ? ' on' : '') + '" type="button" data-role="' + c[0] + '" aria-pressed="' + on + '"><span class="role-ic">' + ic(c[3]) + '</span><span class="role-txt"><span class="role-name">' + c[1] + '</span><span class="muted">' + c[2] + '</span></span>' + (on ? '<span class="tag">اختيارك الحالي</span>' : '') + '</button>';
+      return '<button class="choice c-' + c[3] + (on ? ' on' : '') + '" type="button" data-role="' + c[0] + '" data-d="' + (i * 80) + '" aria-pressed="' + on + '"><span class="choice-art">' + motif(c[4]) + '</span><span class="choice-name">' + c[1] + '</span><span class="choice-say">' + c[2] + '</span>' + (on ? '<span class="choice-on">' + ic('check') + 'اختيارك الحالي</span>' : '') + '</button>';
     }).join('') + '</div>';
-    $$('[data-role]', main).forEach(function (b) { b.addEventListener('click', function () { S.role = b.getAttribute('data-role'); save(); location.hash = '#home'; }); });
+  }
+  function bindRoles() {
+    $$('[data-role]', main).forEach(function (b) { b.addEventListener('click', function () { S.role = b.getAttribute('data-role'); save(); goHome(); }); });
+  }
+  function goHome() { if ((location.hash || '#home') === '#home') go(); else location.hash = '#home'; }
+
+  V.role = function () {
+    main.innerHTML = '<header class="head"><h1 class="mega">إنت مين؟</h1><p class="lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p></header>' + roleChoices();
+    bindRoles();
   };
 
   /* ---------- home ---------- */
@@ -231,21 +287,20 @@
     return TEXT[k][0][1] + ': ' + TEXT[k][0][2];
   }
   function skyTile(p) {
-    var h = '<section class="tile sky" aria-labelledby="sky-t">';
+    var h = '<section class="tile sky" aria-labelledby="sky-t" data-d="0"><div class="sky-ros">' + rosette(p, false) + '</div><div class="sky-in">';
     if (p) {
       var n = progress(p), nx = null;
       STEPS.some(function (s) { if (!stepDone(p, s[0])) { nx = s; return true; } return false; });
-      h += '<div class="sky-head"><div><p class="sky-kicker">آخر مشروع اشتغلت عليه · ' + fmtDate(p.updated) + '</p><h2 id="sky-t">' + esc(p.title || 'مشروع من غير عنوان') + '</h2></div>' +
-        '<p class="sky-count"><span class="big num">' + n + '</span><span class="of">من ' + STEPS.length + '</span><span class="lbl">أجزاء مكتملة</span></p></div>' +
+      h += '<div class="sky-head"><p class="sky-kicker">آخر مشروع اشتغلت عليه · ' + fmtDate(p.updated) + '</p><h2 id="sky-t">' + esc(p.title || 'مشروع من غير عنوان') + '</h2><p class="sky-count num">' + n + ' من ' + STEPS.length + ' أجزاء مكتملة</p></div>' +
         starChart(p, false) + starChart(p, true) +
-        '<div class="sky-foot"><p class="sky-next">' + (nx ? '<span class="pill">الخطوة الجاية</span><strong>' + nx[1] + '</strong><span class="sky-hint">' + esc(stepHint(nx[0])) + '</span>' : '<span class="pill">اكتملت</span><span class="sky-hint">كل الأجزاء العشرة مكتوبة. راجعها مع مشرفك واطبع نسخة.</span>') + '</p>' +
-        '<div class="row"><a class="btn onsky" href="#project/' + p.id + '">افتح المشروع</a>' + (nx ? '<a class="btn primary" href="#project/' + p.id + '/' + nx[0] + '">كمّل: ' + nx[1] + '</a>' : '') + '</div></div>';
+        '<div class="sky-foot"><p class="sky-next">' + (nx ? '<span class="sky-label">الخطوة الجاية</span><strong>' + nx[1] + '</strong><span class="sky-hint">' + esc(stepHint(nx[0])) + '</span>' : '<span class="sky-label">اكتملت</span><span class="sky-hint">كل الأجزاء العشرة مكتوبة. راجعها مع مشرفك واطبع نسخة.</span>') + '</p>' +
+        '<div class="row"><a class="btn onsky" href="#project/' + p.id + '">افتح المشروع</a>' + (nx ? '<a class="btn primary mag" href="#project/' + p.id + '/' + nx[0] + '">كمّل: ' + nx[1] + '</a>' : '') + '</div></div>';
     } else {
-      h += '<div class="sky-head"><div><h2 id="sky-t">مشروعك البحثي بيبدأ من سؤال</h2><p class="sky-lead">عشر محطات من السؤال لحد ملاحظات المشرف. كل جزء تكمّله بينوّر نجمة، والمرشد بيقولك إيه الناقص.</p></div></div>' +
+      h += '<div class="sky-head"><h2 id="sky-t">مشروعك البحثي بيبدأ من سؤال</h2><p class="sky-lead">عشر محطات من السؤال لحد ملاحظات المشرف. كل جزء تكمّله بينوّر نجمة، والمرشد بيقولك إيه الناقص.</p></div>' +
         starChart(null, false) + starChart(null, true) +
-        '<div class="sky-foot"><p class="sky-next"><span class="sky-hint">لسه مفيش مشاريع على الجهاز ده.</span></p><div class="row"><button class="btn primary" type="button" id="homeNew">ابدأ أول مشروع</button></div></div>';
+        '<div class="sky-foot"><p class="sky-next"><span class="sky-hint">لسه مفيش مشاريع على الجهاز ده.</span></p><div class="row"><button class="btn primary mag" type="button" id="homeNew">ابدأ أول مشروع</button></div></div>';
     }
-    return h + '</section>';
+    return h + '</div></section>';
   }
   /* A small schematic of the comparison the guide is recommending. Illustrative shape only, not data. */
   function schema(p) {
@@ -279,77 +334,117 @@
   }
   var READS = '<ul class="reads"><li><span class="num">01</span>دور كل متغير: مستقل ولا تابع</li><li><span class="num">02</span>مستوى القياس: اسمي، ترتيبي، كمّي</li><li><span class="num">03</span>عدد المجموعات، ومستقلة ولا مرتبطة</li></ul>';
   function guideTile(p) {
-    var h = '<section class="tile guide"><div class="tile-head"><span class="tile-ic">' + ic('guide') + '</span><h2>مرشد الاختبار الإحصائي</h2></div>';
-    if (!p) return h + '<p class="muted">بيقرا متغيرات مشروعك ومستوى قياسها، ويقترح الاختبار المناسب ويقولك ليه. أول ما تبدأ مشروع هيشتغل.</p><p class="guide-sub">بيقرا 3 حاجات</p>' + READS + '</section>';
+    var h = '<section class="tile block sun guide" data-d="90"><h2 class="block-label">مرشد الاختبار الإحصائي</h2>';
+    if (!p) return h + '<p class="guide-ask">بيقرا متغيرات مشروعك ويقترح الاختبار المناسب ويقولك ليه.</p>' + READS + '</section>';
     var r = recommend(p);
-    if (!r) h += '<p class="guide-ask">ناقص متغير مستقل ومتغير تابع</p><p class="muted">اكتبهم في جزء المتغيرات، وهنقترح الاختبار المناسب.</p><p class="guide-sub">بيقرا 3 حاجات</p>' + READS + '<p class="tile-end"><a class="btn" href="#project/' + p.id + '/variables">اكتب المتغيرات</a></p>';
-    else if (r.need) h += '<p class="guide-ask">' + esc(r.need) + '</p><p class="guide-sub">بيقرا 3 حاجات</p>' + READS + '<p class="tile-end"><a class="btn" href="#project/' + p.id + '/' + (r.need.indexOf('التصميم') > -1 ? 'design' : 'variables') + '">كمّل الناقص</a></p>';
-    else if (!r.recs.length) h += '<p class="muted">مفيش اقتراح جاهز للتركيبة دي من المتغيرات. راجع مستوى القياس في جزء المتغيرات.</p><p class="tile-end"><a class="btn" href="#project/' + p.id + '/variables">افتح المتغيرات</a></p>';
+    if (!r) h += '<p class="guide-ask">ناقص متغير مستقل ومتغير تابع</p><p>اكتبهم في جزء المتغيرات، وهنقترح الاختبار المناسب.</p>' + READS + '<p class="tile-end"><a class="btn inked" href="#project/' + p.id + '/variables">اكتب المتغيرات</a></p>';
+    else if (r.need) h += '<p class="guide-ask">' + esc(r.need) + '</p>' + READS + '<p class="tile-end"><a class="btn inked" href="#project/' + p.id + '/' + (r.need.indexOf('التصميم') > -1 ? 'design' : 'variables') + '">كمّل الناقص</a></p>';
+    else if (!r.recs.length) h += '<p class="guide-ask">مفيش اقتراح جاهز للتركيبة دي من المتغيرات.</p><p>راجع مستوى القياس في جزء المتغيرات.</p><p class="tile-end"><a class="btn inked" href="#project/' + p.id + '/variables">افتح المتغيرات</a></p>';
     else {
       var x = r.recs[0];
-      h += '<p class="guide-test">' + esc(x.test) + '</p><p class="guide-why">' + esc(x.why) + '</p>' + schema(p) + (x.alt ? '<p class="guide-alt"><span>لو الافتراضات مش متحققة</span>' + esc(x.alt) + '</p>' : '') + '<p class="guide-sub">افحص قبل ما تحلل</p><ul class="checks">' + x.check.slice(0, 2).map(function (c) { return '<li>' + ic('clock') + '<span>' + esc(c) + '</span></li>'; }).join('') + '</ul>' +
-        '<p class="tile-end"><a class="btn" href="#project/' + p.id + '/analysis">افتح المرشد</a><span class="tag">حسب متغيراتك</span></p>';
+      h += '<p class="guide-test">' + esc(x.test) + '</p><p class="guide-why">' + esc(x.why) + '</p>' + schema(p) + '<p class="guide-sub">افحص قبل ما تحلل</p><ul class="checks">' + x.check.slice(0, 2).map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>' +
+        '<p class="tile-end"><a class="btn inked" href="#project/' + p.id + '/analysis">افتح المرشد</a></p>';
     }
     return h + '</section>';
   }
   function skillsTile() {
     var sk = [['stats', 'الإحصاء'], ['psychometrics', 'القياس النفسي']], any = sk.some(function (k) { return LEVELS[S.profile[k[0]]]; }), d = profileDone();
-    return '<section class="tile skills"><div class="tile-head"><h2>ملكاتك</h2>' + (any ? '<span class="tag quiet">من كلامك</span>' : '') + '</div><div class="skill-row">' + sk.map(function (k) {
+    return '<section class="tile block violet skills" data-d="180">' + tessellation() + '<div class="skills-in"><h2 class="block-title">ملكاتك</h2><p class="skills-note">' + (any ? 'من كلامك إنت في ملفك. مفيش قياس من عندنا.' : 'حدد مستواك في ملفك، والحلقات تتملى على أساسه.') + '</p><div class="skill-row">' + sk.map(function (k) {
       var v = S.profile[k[0]], lv = LEVELS[v] || 0;
       return '<div class="skill">' + rings(lv) + '<p class="skill-name">' + k[1] + '</p><p class="skill-lv' + (lv ? '' : ' none') + '">' + (lv ? esc(v) : 'لسه ما حددتش') + '</p></div>';
-    }).join('') + '</div><p class="tile-note">' + (any ? 'كل حلقة مستوى إنت اللي حددته في ملفك. مفيش قياس من عندنا.' : 'حدد مستواك في ملفك، والحلقات تتملى على أساسه.') + '</p>' +
-      '<p class="tile-end"><a class="btn" href="#profile">' + (d ? 'عدّل ملفك' : 'كمّل ملفك') + '</a><span class="muted small num">' + d + ' من ' + PF.length + ' حقل مكتمل</span></p></section>';
+    }).join('') + '</div><p class="tile-end"><a class="btn onblock" href="#profile">' + (d ? 'عدّل ملفك' : 'كمّل ملفك') + '</a><span class="num">' + d + ' من ' + PF.length + ' حقل مكتمل</span></p></div></section>';
   }
   function kidsTile(r) {
     var k = S.kids[0], more = S.kids.length - 1, title = r === 'specialist' ? 'الأطفال اللي بتابعهم' : 'أولادي';
-    return '<section class="tile kid' + (k ? '' : ' empty') + '"><div class="kid-txt"><h2 class="kid-label">' + title + '</h2>' +
-      (k ? '<p class="kid-name">' + esc(k.child) + '</p><p class="kid-grade">' + esc(k.grade) + (more > 0 ? ' · و' + plural(more, 'طفل كمان', 'طفلين كمان', 'أطفال كمان', 'طفل كمان') : '') + '</p><p class="kid-soon">الأنشطة قريباً</p><a class="btn onkid" href="#family">افتح المتابعة</a>'
-        : '<p class="kid-name small-name">سجّل طفلك</p><p class="kid-grade">من أولى لسادسة ابتدائي، بموافقة ولي الأمر.</p><p class="kid-soon">الأنشطة قريباً</p><a class="btn onkid" href="#family">ابدأ التسجيل</a>') +
+    return '<section class="tile block mint kid' + (k ? '' : ' empty') + '" data-d="260"><div class="kid-txt"><h2 class="block-label">' + title + '</h2>' +
+      (k ? '<p class="kid-name">' + esc(k.child) + '</p><p class="kid-grade">' + esc(k.grade) + (more > 0 ? ' · و' + plural(more, 'طفل كمان', 'طفلين كمان', 'أطفال كمان', 'طفل كمان') : '') + '</p><p class="kid-soon">الأنشطة قريباً</p><a class="btn inked" href="#family">افتح المتابعة</a>'
+        : '<p class="kid-name small-name">سجّل طفلك</p><p class="kid-grade">من أولى لسادسة ابتدائي، بموافقة ولي الأمر.</p><p class="kid-soon">الأنشطة قريباً</p><a class="btn inked" href="#family">ابدأ التسجيل</a>') +
       '</div>' + TOYS + '</section>';
   }
+  var LAB_ART = {
+    measure: '<svg class="lab-art" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><rect x="10" y="34" width="76" height="28" rx="5" transform="rotate(-24 48 48)"/><path d="M24.500 47.800l3.700 8.200M34.500 43.300l5.300 12M44.600 38.800l3.700 8.200M54.600 34.300l5.300 12M64.700 29.800l3.700 8.200"/></svg>',
+    stats: '<svg class="lab-art" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><path d="M6 76c18 0 22-56 42-56s24 56 42 56"/><path d="M48 20v56M6 76h84"/><circle cx="48" cy="20" r="4.500"/></svg>'
+  };
   function labsTile() {
-    return '<section class="tile labs"><h2>المعامل</h2>' +
-      '<a class="lab" href="' + LABS.scales + '"><span class="tile-ic">' + ic('measure') + '</span><span><strong>معمل القياس النفسي</strong><small>ثبات، صدق، وتحليل بنود</small></span></a>' +
-      '<a class="lab" href="' + LABS.stats + '"><span class="tile-ic">' + ic('stats') + '</span><span><strong>معمل الإحصاء النفسي</strong><small>اختبارات، حجم أثر، وقوة</small></span></a></section>';
+    return '<div class="labs" data-d="340"><a class="tile block coral lab" href="' + LABS.scales + '">' + LAB_ART.measure + '<span class="lab-name">معمل القياس النفسي</span><span class="lab-say">ثبات، صدق، وتحليل بنود</span></a>' +
+      '<a class="tile block lilac lab" href="' + LABS.stats + '">' + LAB_ART.stats + '<span class="lab-name">معمل الإحصاء النفسي</span><span class="lab-say">اختبارات، حجم أثر، وقوة</span></a></div>';
   }
   function soonTile() {
-    return '<section class="tile soon"><h2>لسه بنبنيها</h2><ul>' + [
-      ['library', 'مكتبة النظريات النفسية', 'كل نظرية بأدلتها ونقدها وأنشطتها'],
-      ['games', 'ألعاب وأنشطة الأطفال', 'ذاكرة، انتباه، استدلال، مرونة، إبداع'],
-      ['ops', 'بحوث العمليات واتخاذ القرار', 'توزيع العينة، الميزانية مقابل القوة، الجدولة'],
-      ['opps', 'مستكشف الأدبيات والفرص', 'أبحاث بروابطها، ومنح متراجعة بتاريخها'],
-      ['career', 'التوجيه المهني والبورتفوليو', 'ميولك، مساراتك، وملف إنجازاتك']
-    ].map(function (c) { return '<li>' + ic(c[0]) + '<span><strong>' + c[1] + '</strong><small>' + c[2] + '</small></span><span class="tag soon-tag">قريباً</span></li>'; }).join('') + '</ul></section>';
+    return '<section class="soon" data-d="420"><h2>قريباً</h2><ul>' + [
+      ['مكتبة النظريات النفسية', 'كل نظرية بأدلتها ونقدها وأنشطتها'],
+      ['ألعاب وأنشطة الأطفال', 'ذاكرة، انتباه، استدلال، مرونة، إبداع'],
+      ['بحوث العمليات واتخاذ القرار', 'توزيع العينة، الميزانية مقابل القوة، الجدولة'],
+      ['مستكشف الأدبيات والفرص', 'أبحاث بروابطها، ومنح متراجعة بتاريخها'],
+      ['التوجيه المهني والبورتفوليو', 'ميولك، مساراتك، وملف إنجازاتك']
+    ].map(function (c) { return '<li><strong>' + c[0] + '</strong><small>' + c[1] + '</small></li>'; }).join('') + '</ul></section>';
   }
+
+  /* The welcome: five scroll scenes for a first visit. Static and complete as markup; motion.js brings it to life. */
+  var QUESTIONS = ['أنا أقدر أبقى إيه؟', 'عندي إيه دلوقتي من قدرات ومهارات؟', 'أطوّر إيه بعد كده، وأثبت إزاي إني اتحسنت؟', 'أشتغل على أنهي بحث أو مشكلة حقيقية؟', 'إنجازاتي تفتح لي أنهي فرص؟'];
+  function morphStage() {
+    var g = girih(1.5), r = seeded(23), i, h = '<svg class="morph" id="morph" viewBox="-230 -230 460 460" aria-hidden="true" focusable="false">';
+    h += '<g class="m-rings">' + [[206, 0, 0, 'a'], [158, -6, 8, 'b'], [112, -12, 16, 'c'], [70, -18, 24, 'd']].map(function (c) { return '<circle class="m-ring ' + c[3] + '" cx="' + c[1] + '" cy="' + c[2] + '" r="' + c[0] + '"/>'; }).join('') + '</g>';
+    h += '<g class="m-ros"><polygon class="m-frame" points="' + g.frame.join(' ') + '"/>' + g.gaps.map(function (p) { return '<polygon class="m-gap" points="' + p + '"/>'; }).join('') + g.petals.map(function (p, k) { return '<polygon class="m-petal' + (k === 6 ? ' next' : '') + '" points="' + p + '"/>'; }).join('') + '<polygon class="m-core" points="' + g.star.join(' ') + '"/></g>';
+    var scatter = [], line = '';
+    var sx = [176, 118, 150, 60, 22, -40, -96, -70, -150, -190], sy = [-150, -60, 70, -120, 30, 150, -20, -170, 110, -70];
+    for (i = 0; i < 10; i++) scatter.push([f1(sx[i] + (r() - 0.5) * 24), f1(sy[i] + (r() - 0.5) * 24)]);
+    scatter.forEach(function (q, n) { line += (n ? 'L' : 'M') + q[0] + ' ' + q[1]; });
+    h += '<path class="m-line" pathLength="1" d="' + line + '"/><g class="m-stars">';
+    for (i = 0; i < 10; i++) {
+      var s = 16 + Math.round(r() * 18), ring = [206, 158, 112, 70][i % 4], oa = (i * 97 + 30) * Math.PI / 180, off = [0, 0, -6, 8, -12, 16, -18, 24];
+      h += '<g class="m-star" data-p0="' + scatter[i].join(',') + '" data-p1="' + g.tips[i] + '" data-p2="' + f1(off[(i % 4) * 2] + Math.cos(oa) * ring) + ',' + f1(off[(i % 4) * 2 + 1] + Math.sin(oa) * ring) + '"><use href="#star4" x="' + (-s / 2) + '" y="' + (-s / 2) + '" width="' + s + '" height="' + s + '"/></g>';
+    }
+    return h + '</g></svg>';
+  }
+  function welcome() {
+    var ch = [
+      ['نجوم', 'بتكتشف اللي عندك', [0, 1], 'star'],
+      ['زخرفة', 'بتربطه في بناء واحد', [2, 3], 'rosette'],
+      ['حلقات', 'وبيكبر بالممارسة', [4], 'rings']
+    ];
+    return '<div class="intro" id="intro"><canvas class="intro-sky" id="introSky" aria-hidden="true"></canvas>' +
+      '<section class="scene s1"><h1 class="s1-title"><span class="s1-brand">' + esc(BRAND) + '</span><span class="s1-line">من القدرة</span> <span class="s1-line">للإنجاز</span></h1>' +
+      '<p class="s1-lead">منصة واحدة للباحث والأخصائي وولي الأمر. بتمشي معاك من أول سؤال لحد نتيجة تقدر تثبتها.</p><p class="s1-cue" aria-hidden="true"><span>انزل</span><i></i></p></section>' +
+      '<div class="story"><div class="stage">' + morphStage() + '</div>' + ch.map(function (c, i) {
+        return '<section class="scene ch ch' + (i + 1) + '"><div class="ch-in"><div class="ch-glyph rv">' + motif(c[3]) + '</div><p class="ch-no num rv">' + pad2(i + 1) + '</p><h2 class="ch-word rv">' + c[0] + '</h2><p class="ch-say rv">' + c[1] + '</p><ol class="ch-q">' + c[2].map(function (q) { return '<li class="rv"><span class="num">' + pad2(q + 1) + '</span>' + QUESTIONS[q] + '</li>'; }).join('') + '</ol></div></section>';
+      }).join('') + '</div>' +
+      '<section class="scene s5" id="choose"><h2 class="s5-title">إنت مين؟</h2><p class="s5-lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p>' + roleChoices() + '</section></div>';
+  }
+  function introSeen() { try { return localStorage.getItem(INTRO_KEY) === '1'; } catch (e) { return introSeen.mem; } }
+  function setIntro(v) { introSeen.mem = v; try { if (v) localStorage.setItem(INTRO_KEY, '1'); else localStorage.removeItem(INTRO_KEY); } catch (e) {} }
 
   V.home = function () {
     var r = S.role, h = '', works = !r || r === 'researcher' || r === 'student' || r === 'specialist', kids = !r || r === 'parent' || r === 'specialist';
     var p = works ? latest() : null;
-    if (!r) {
-      h += '<section class="hero"><div class="hero-main"><h1><span class="hero-brand">' + esc(BRAND) + '</span>من القدرة للإنجاز</h1><p class="lead">منصة واحدة للباحث والأخصائي وولي الأمر. بتمشي معاك من أول سؤال لحد نتيجة تقدر تثبتها.</p>' +
-        '<p><a class="btn primary big" href="#role">ابدأ: اختار دورك</a></p></div>' +
-        '<ol class="q" aria-label="خمس أسئلة بنمشي معاك فيها"><li>أنا أقدر أبقى إيه؟</li><li>عندي إيه دلوقتي من قدرات ومهارات؟</li><li>أطوّر إيه بعد كده، وأثبت إزاي إني اتحسنت؟</li><li>أشتغل على أنهي بحث أو مشكلة حقيقية؟</li><li>إنجازاتي تفتح لي أنهي فرص؟</li></ol></section>';
-    } else {
-      var t, lead = '';
-      if (r === 'parent') {
-        t = S.kids.length ? 'متابعة ' + (S.kids.length === 1 ? esc(S.kids[0].child) : 'أولادك') : 'سجّل طفلك علشان تبدأ';
-        lead = S.kids.length ? 'مسجّل عندك <em class="num">' + plural(S.kids.length, 'طفل واحد', 'طفلين', 'أطفال', 'طفل') + '</em>. الأنشطة لسه بنجهّزها.' : 'التسجيل بياخد دقيقة، وبموافقة ولي الأمر.';
-      } else if (p) {
-        var left = STEPS.length - progress(p);
-        t = left ? 'فاضل لك <em class="num">' + plural(left, 'جزء واحد', 'جزئين', 'أجزاء', 'جزء') + '</em> وتكمّل خطة بحثك' : 'خطة بحثك <em>اكتملت</em>';
-        lead = 'عندك <span class="num">' + plural(S.projects.length, 'مشروع واحد', 'مشروعين', 'مشاريع', 'مشروع') + '</span> على الجهاز ده.';
-      } else { t = 'ابدأ مشروعك البحثي الأول'; lead = 'هنمشي معاك خطوة خطوة، من السؤال لخطة التحليل.'; }
-      h += '<header class="head hello"><h1>' + t + '</h1><p class="lead">' + lead + '</p></header>';
+    if (!r && !introSeen()) {
+      main.innerHTML = welcome();
+      document.body.classList.add('is-intro');
+      bindRoles();
+      if (window.HubMotion) window.HubMotion.intro($('#intro'));
+      return;
     }
+    var t, lead = '';
+    if (!r) {
+      t = 'من القدرة <em>للإنجاز</em>'; lead = 'لسه ما اخترتش دورك. اختاره علشان نرتّب لك الأقسام اللي تهمك.';
+    } else if (r === 'parent') {
+      t = S.kids.length ? 'متابعة <em>' + (S.kids.length === 1 ? esc(S.kids[0].child) : 'أولادك') + '</em>' : 'سجّل طفلك <em>علشان تبدأ</em>';
+      lead = S.kids.length ? 'مسجّل عندك ' + plural(S.kids.length, 'طفل واحد', 'طفلين', 'أطفال', 'طفل') + '. الأنشطة لسه بنجهّزها.' : 'التسجيل بياخد دقيقة، وبموافقة ولي الأمر.';
+    } else if (p) {
+      var left = STEPS.length - progress(p);
+      t = left ? 'فاضل لك <em class="num">' + plural(left, 'جزء واحد', 'جزئين', 'أجزاء', 'جزء') + '</em> وتكمّل خطة بحثك' : 'خطة بحثك <em>اكتملت</em>';
+      lead = 'عندك ' + plural(S.projects.length, 'مشروع واحد', 'مشروعين', 'مشاريع', 'مشروع') + ' على الجهاز ده.';
+    } else { t = 'ابدأ مشروعك <em>البحثي الأول</em>'; lead = 'هنمشي معاك خطوة خطوة، من السؤال لخطة التحليل.'; }
+    h += '<header class="head dash-head"><h1 class="mega">' + t + '</h1><p class="lead">' + lead + '</p>' + (r ? '' : '<p class="row dash-cta"><a class="btn primary big mag" href="#role">ابدأ: اختار دورك</a><button class="btn" type="button" id="replayIntro">شوف المقدمة</button></p>') + '</header>';
     h += '<div class="bento b-' + (r || 'guest') + '">' + (works ? skyTile(p) + guideTile(p) + skillsTile() : '') + (kids ? kidsTile(r) : '') + labsTile() + soonTile() + '</div>';
     main.innerHTML = h;
     var nb = $('#homeNew'); if (nb) nb.addEventListener('click', newProject);
+    var rp = $('#replayIntro'); if (rp) rp.addEventListener('click', function () { setIntro(false); go(); });
   };
 
   V.labs = function () {
-    main.innerHTML = '<header class="head"><h1>المعامل</h1><p class="lead">الموقعين الأصليين شغالين زي ما هم. افتح المعمل اللي محتاجه.</p></header><div class="lab-grid">' +
-      '<a class="lab-card" href="' + LABS.scales + '"><span class="tile-ic lg">' + ic('measure') + '</span><h2>معمل القياس النفسي</h2><p class="muted">بناء المقاييس، الثبات والصدق، تحليل البنود، بنك المقاييس، ووضع الامتحان.</p><span class="go">افتح المعمل</span></a>' +
-      '<a class="lab-card" href="' + LABS.stats + '"><span class="tile-ic lg">' + ic('stats') + '</span><h2>معمل الإحصاء النفسي</h2><p class="muted">الاختبارات الإحصائية، حجم العينة والقوة، قراءة مخرجات SPSS، وكتابة النتايج.</p><span class="go">افتح المعمل</span></a></div>';
+    main.innerHTML = '<header class="head"><h1 class="mega">المعامل</h1><p class="lead">الموقعين الأصليين شغالين زي ما هم. افتح المعمل اللي محتاجه.</p></header><div class="lab-grid">' +
+      '<a class="tile block coral lab big" data-d="0" href="' + LABS.scales + '">' + LAB_ART.measure + '<span class="lab-name">معمل القياس النفسي</span><span class="lab-say">بناء المقاييس، الثبات والصدق، تحليل البنود، بنك المقاييس، ووضع الامتحان.</span><span class="go">افتح المعمل</span></a>' +
+      '<a class="tile block lilac lab big" data-d="90" href="' + LABS.stats + '">' + LAB_ART.stats + '<span class="lab-name">معمل الإحصاء النفسي</span><span class="lab-say">الاختبارات الإحصائية، حجم العينة والقوة، قراءة مخرجات SPSS، وكتابة النتايج.</span><span class="go">افتح المعمل</span></a></div>';
   };
 
   /* ---------- researcher profile ---------- */
@@ -415,7 +510,7 @@
     else h += '<div class="plist">' + S.projects.map(function (p) {
       var n = progress(p), nx = null;
       STEPS.some(function (s) { if (!stepDone(p, s[0])) { nx = s; return true; } return false; });
-      return '<a class="pcard" href="#project/' + p.id + '"><span class="pcard-ros">' + rosette(p, false) + '</span><span class="pcard-body"><h2>' + esc(p.title || 'مشروع من غير عنوان') + '</h2><span class="pcard-meta num">' + n + ' من ' + STEPS.length + ' أجزاء مكتملة</span>' +
+      return '<a class="pcard" data-d="' + (S.projects.indexOf(p) * 70) + '" href="#project/' + p.id + '"><span class="pcard-ros">' + rosette(p, false) + '</span><span class="pcard-body"><h2>' + esc(p.title || 'مشروع من غير عنوان') + '</h2><span class="pcard-meta num">' + n + ' من ' + STEPS.length + ' أجزاء مكتملة</span>' +
         '<span class="pcard-sub">' + (nx ? 'الجاي: ' + nx[1] : 'كل الأجزاء مكتملة') + ' · آخر تعديل ' + fmtDate(p.updated) + '</span></span></a>';
     }).join('') + '</div>';
     main.innerHTML = h;
@@ -428,7 +523,7 @@
     step = step || 'overview';
     var h = '<p class="crumb"><a href="#projects">' + ic('back') + 'كل المشاريع</a></p>' +
       '<div class="ptitle"><label for="ptitle">عنوان المشروع</label><textarea id="ptitle" rows="1" placeholder="اكتب عنوان مبدئي">' + esc(p.title) + '</textarea></div>' +
-      '<div class="steps" role="tablist" aria-label="أجزاء المشروع"><button type="button" role="tab" data-step="overview" class="ov" aria-selected="' + (step === 'overview') + '"><span class="dot">' + ic('projects') + '</span><span class="lbl">نظرة عامة</span></button>' +
+      '<div class="steps" role="tablist" aria-label="أجزاء المشروع"><button type="button" role="tab" data-step="overview" class="ov" aria-selected="' + (step === 'overview') + '"><span class="dot">' + ic('steps') + '</span><span class="lbl">نظرة عامة</span></button>' +
       STEPS.map(function (s, i) { var ok = stepDone(p, s[0]); return '<button type="button" role="tab" data-step="' + s[0] + '" class="' + (ok ? 'done' : '') + '" aria-selected="' + (step === s[0]) + '"><span class="dot num">' + (ok ? ic('check') : i + 1) + '</span><span class="lbl">' + s[1] + '</span>' + (ok ? sr('مكتمل') : '') + '</button>'; }).join('') + '</div><div id="pane"></div>';
     main.innerHTML = h;
     var strip = $('.steps', main), cur = $('[aria-selected="true"]', strip);
@@ -449,6 +544,7 @@
     if (step === 'analysis') pane.insertAdjacentHTML('afterbegin', advise(p));
   };
   function touch(p) { p.updated = today(); save(); }
+  function tick() { var s = $('#saved'); if (!s) return; s.classList.remove('tick'); void s.offsetWidth; s.classList.add('tick'); }
 
   function overview(p, pane) {
     var n = progress(p);
@@ -470,7 +566,7 @@
     pane.innerHTML = '<form class="card form">' + TEXT[step].map(function (f) { return field('f-' + f[0], f[1], p.d[f[0]] || '', f[2], f[3]); }).join('') +
       '<p class="muted small autosave" id="saved" aria-live="polite">' + ic('check') + 'بيتحفظ لوحده وإنت بتكتب.</p></form>' + nextBtn(p, step);
     $$('[data-f]', pane).forEach(function (el) {
-      el.addEventListener('input', function () { p.d[el.id.slice(2)] = el.value; touch(p); });
+      el.addEventListener('input', function () { p.d[el.id.slice(2)] = el.value; touch(p); tick(); });
     });
   }
   function nextBtn(p, step) {
@@ -591,12 +687,31 @@
   function route() {
     var parts = (location.hash || '#home').slice(1).split('/'), r = parts[0];
     if (!V[r]) r = 'home';
-    drawNav(r === 'project' ? 'projects' : r);
+    if (window.HubMotion) window.HubMotion.stop();
+    document.body.classList.remove('is-intro');
     V[r](parts[1], parts[2]);
+    drawNav(r === 'project' ? 'projects' : r);
     document.title = BRAND + ' — منصة البحث وتنمية القدرات';
     if (route.ready) { main.focus({ preventScroll: true }); window.scrollTo(0, 0); }
     route.ready = true;
+    stage(r);
   }
-  window.addEventListener('hashchange', route);
+  /* After a render: hand each marked element its place in the entrance sequence, and count numbers up. */
+  function stage(r) {
+    $$('[data-d]', main).forEach(function (el) { el.style.animationDelay = el.getAttribute('data-d') + 'ms'; });
+    if (!calm()) $$('[data-count]', main).forEach(function (el) {
+      var to = +el.getAttribute('data-count'), t0 = 0;
+      if (!(to > 0)) return;
+      function step(t) { if (!t0) { t0 = t + 500; el.textContent = '0'; } var k = Math.min(1, Math.max(0, (t - t0) / 800)); el.textContent = String(Math.round(to * (1 - Math.pow(1 - k, 3)))); if (k < 1 && el.isConnected) requestAnimationFrame(step); else el.textContent = String(to); }
+      requestAnimationFrame(step);
+    });
+    if (window.HubMotion) window.HubMotion.after(main, r);
+  }
+  /* Route changes cross-fade through the View Transitions API where it exists; otherwise they are instant. */
+  function go() {
+    if (route.ready && document.startViewTransition && !calm()) { try { var vt = document.startViewTransition(route), quiet = function () {}; vt.ready.catch(quiet); vt.finished.catch(quiet); vt.updateCallbackDone.catch(quiet); return; } catch (e) {} }
+    route();
+  }
+  window.addEventListener('hashchange', go);
   route();
 })();

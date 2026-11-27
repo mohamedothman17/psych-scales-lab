@@ -11,6 +11,7 @@
 <link rel="preload" href="fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/alexandria-arabic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="hub.css">
+<script src="boot.js"></script>
 </head>
 <body>
 <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
@@ -32,6 +33,7 @@
   </a>
   <nav class="nav" id="nav" aria-label="الأقسام"></nav>
   <div class="rail-foot">
+    <a class="chip skipchip" id="skipBtn" href="#home" hidden>تخطّي</a>
     <button class="chip" id="roleBtn" type="button"></button>
     <button class="chip" id="themeBtn" type="button"></button>
   </div>
@@ -45,6 +47,8 @@
 </div>
 <nav class="tabs" id="tabs" aria-label="الأقسام"></nav>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-<script src="hub.js"></script>
+<script src="../vendor/anim/gsap.min.js" defer></script>
+<script src="motion.js" defer></script>
+<script src="hub.js" defer></script>
 </body>
 </html>
