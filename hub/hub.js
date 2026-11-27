@@ -189,10 +189,19 @@
     for (i = 0; i < 5; i++) rays += 'M' + W / 2 + ' ' + cy + 'L' + f1(W * (0.04 + i * 0.23)) + ' 0';
     h += '<g class="sky-grid"><circle cx="' + W / 2 + '" cy="' + cy + '" r="' + f1(H * 3.3) + '"/><circle cx="' + W / 2 + '" cy="' + cy + '" r="' + f1(H * 3.55) + '"/><circle cx="' + W / 2 + '" cy="' + cy + '" r="' + f1(H * 3.8) + '"/><path d="' + rays + '"/></g>';
     var r = seeded(mobile ? 7 : 11), dots = '';
-    for (i = 0; i < (mobile ? 30 : 60); i++) dots += '<circle cx="' + f1(r() * W) + '" cy="' + f1(r() * H) + '" r="' + (r() < 0.2 ? 1.1 : 0.6) + '" opacity="' + f1(0.25 + r() * 0.5) + '"/>';
+    for (i = 0; i < (mobile ? 30 : 60); i++) dots += '<circle class="tw' + (i % 4) + '" cx="' + f1(r() * W) + '" cy="' + f1(r() * H) + '" r="' + (r() < 0.2 ? 1.1 : 0.6) + '" opacity="' + f1(0.25 + r() * 0.5) + '"/>';
     h += '<g class="sky-field">' + dots + '</g>';
     for (i = 0; i < pts.length - 1; i++) {
       h += '<path class="lk ' + (done[i] && done[i + 1] ? 'link-done" pathLength="1' : (done[i] && i + 1 === nx) ? 'link-next' : 'link-todo') + '" data-d="' + (520 + i * 110) + '" d="M' + pts[i][0] + ' ' + pts[i][1] + 'L' + pts[i + 1][0] + ' ' + pts[i + 1][1] + '"/>';
+    }
+    var lit = '', run = 0;
+    for (i = 0; i < pts.length; i++) { if (done[i] && (i === 0 || done[i - 1])) { lit += (run ? 'L' : 'M') + pts[i][0] + ' ' + pts[i][1]; run++; } else if (i > 0 && !done[i]) break; }
+    if (run > 1) h += '<path class="comet" pathLength="100" d="' + lit + '"/>';
+    function wrap(k, body, state) {
+      if (!p) return body;
+      var tx = pts[k][0], ty = pts[k][1] - (mobile ? 30 : 40), tw = state.length * 7.5 + 22;
+      return '<a class="sta" href="#project/' + p.id + '/' + STEPS[k][0] + '" aria-label="' + esc(STEPS[k][1] + ': ' + state) + '">' + body +
+        '<g class="tip" aria-hidden="true"><rect x="' + f1(tx - tw / 2) + '" y="' + (ty - 15) + '" width="' + f1(tw) + '" height="22" rx="11"/><text x="' + tx + '" y="' + ty + '">' + state + '</text></g></a>';
     }
     STEPS.forEach(function (s, k) {
       var x = pts[k][0], y = pts[k][1], isNext = k === nx;
@@ -201,13 +210,13 @@
       var num = mobile ? '' : '<text class="n" x="' + x + '" y="' + (up ? y + (isNext ? 58 : 30) : y - (isNext ? 50 : 22)) + '">' + pad2(k + 1) + '</text>';
       if (isNext) {
         var a = mobile ? [38, 26, 18, 11, 18, 44] : [58, 40, 27, 16, 26, 62];
-        h += '<g class="st next" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + a[0] + '" fill="url(#glow)"/><circle class="halo h3" cx="' + x + '" cy="' + y + '" r="' + a[1] + '"/><circle class="halo h2" cx="' + x + '" cy="' + y + '" r="' + a[2] + '"/><circle class="halo h1" cx="' + x + '" cy="' + y + '" r="' + a[3] + '"/>' +
-          '<use href="#star4" x="' + (x - a[4] / 2) + '" y="' + (y - a[4] / 2) + '" width="' + a[4] + '" height="' + a[4] + '"/>' + num + lab(a[5]) + '</g>';
+        h += wrap(k, '<g class="st next" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + a[0] + '" fill="url(#glow)"/><circle class="halo h3" cx="' + x + '" cy="' + y + '" r="' + a[1] + '"/><circle class="halo h2" cx="' + x + '" cy="' + y + '" r="' + a[2] + '"/><circle class="halo h1" cx="' + x + '" cy="' + y + '" r="' + a[3] + '"/>' +
+          '<use href="#star4" x="' + (x - a[4] / 2) + '" y="' + (y - a[4] / 2) + '" width="' + a[4] + '" height="' + a[4] + '"/>' + num + lab(a[5]) + '</g>', 'الخطوة الجاية');
       } else if (done[k]) {
         var z = mobile ? 15 : 19;
-        h += '<g class="st done" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + z + '" fill="url(#glowS)"/><use href="#star4" x="' + (x - z / 2) + '" y="' + (y - z / 2) + '" width="' + z + '" height="' + z + '"/>' + num + lab(mobile ? 27 : 31) + '</g>';
+        h += wrap(k, '<g class="st done" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + z + '" fill="url(#glowS)"/><use href="#star4" x="' + (x - z / 2) + '" y="' + (y - z / 2) + '" width="' + z + '" height="' + z + '"/>' + num + lab(mobile ? 27 : 31) + '</g>', 'مكتمل');
       } else {
-        h += '<g class="st todo" data-d="' + (460 + k * 110) + '"><circle cx="' + x + '" cy="' + y + '" r="' + (mobile ? 3.6 : 4.5) + '"/>' + num + lab(mobile ? 24 : 28) + '</g>';
+        h += wrap(k, '<g class="st todo" data-d="' + (460 + k * 110) + '"><circle class="hit" cx="' + x + '" cy="' + y + '" r="16"/><circle cx="' + x + '" cy="' + y + '" r="' + (mobile ? 3.6 : 4.5) + '"/>' + num + lab(mobile ? 24 : 28) + '</g>', 'ناقص');
       }
     });
     return h + '</svg>';
@@ -292,12 +301,19 @@
     }).join('') + '</div>';
   }
   function bindRoles() {
-    $$('[data-role]', main).forEach(function (b) { b.addEventListener('click', function () { S.role = b.getAttribute('data-role'); save(); goHome(); }); });
+    $$('[data-role]', main).forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        S.role = b.getAttribute('data-role'); save();
+        var at = location.hash;
+        if (window.HubMotion && window.HubMotion.flood && !calm()) window.HubMotion.flood(b, e, function () { if (location.hash !== at) return; if ((at || '#home') === '#home') route(); else location.hash = '#home'; });
+        else goHome();
+      });
+    });
   }
   function goHome() { if ((location.hash || '#home') === '#home') go(); else location.hash = '#home'; }
 
   V.role = function () {
-    main.innerHTML = '<header class="head"><h1 class="mega">إنت مين؟</h1><p class="lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p></header>' + roleChoices();
+    main.innerHTML = '<header class="head"><h1 class="mega" data-reveal="words">إنت مين؟</h1><p class="lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p></header>' + roleChoices();
     bindRoles();
   };
 
@@ -316,11 +332,11 @@
     return TEXT[k][0][1] + ': ' + TEXT[k][0][2];
   }
   function skyTile(p) {
-    var h = '<section class="tile sky" aria-labelledby="sky-t" data-d="0"><div class="sky-ros">' + rosette(p, false) + '</div><div class="sky-in">';
+    var h = '<section class="tile sky" aria-labelledby="sky-t" data-d="0" data-glow><div class="sky-ring" aria-hidden="true"></div><div class="sky-ros">' + rosette(p, false) + '</div><div class="sky-in">';
     if (p) {
       var n = progress(p), nx = null;
       STEPS.some(function (s) { if (!stepDone(p, s[0])) { nx = s; return true; } return false; });
-      h += '<div class="sky-head"><p class="sky-kicker">آخر مشروع اشتغلت عليه · ' + fmtDate(p.updated) + '</p><h2 id="sky-t">' + esc(p.title || 'مشروع من غير عنوان') + '</h2><p class="sky-count num">' + n + ' من ' + STEPS.length + ' أجزاء مكتملة</p></div>' +
+      h += '<div class="sky-head"><p class="sky-kicker">آخر مشروع اشتغلت عليه · ' + fmtDate(p.updated) + '</p><h2 id="sky-t">' + esc(p.title || 'مشروع من غير عنوان') + '</h2><p class="sky-count num"><span data-count="' + n + '">' + n + '</span> من ' + STEPS.length + ' أجزاء مكتملة</p></div>' +
         starChart(p, false) + starChart(p, true) +
         '<div class="sky-foot"><p class="sky-next">' + (nx ? '<span class="sky-label">الخطوة الجاية</span><strong>' + nx[1] + '</strong><span class="sky-hint">' + esc(stepHint(nx[0])) + '</span>' : '<span class="sky-label">اكتملت</span><span class="sky-hint">كل الأجزاء العشرة مكتوبة. راجعها مع مشرفك واطبع نسخة.</span>') + '</p>' +
         '<div class="row"><a class="btn onsky" href="#project/' + p.id + '">افتح المشروع</a>' + (nx ? '<a class="btn primary mag" href="#project/' + p.id + '/' + nx[0] + '">كمّل: ' + nx[1] + '</a>' : '') + '</div></div>';
@@ -402,7 +418,8 @@
     var later = Object.keys(MODS).filter(function (k) { return !MODS[k].ready; }).map(function (k) { return [MODS[k].title, MODS[k].say]; });
     later.push(['التوجيه المهني والبورتفوليو', 'ميولك، مساراتك، وملف إنجازاتك']);
     var open = Object.keys(MODS).filter(function (k) { var m = MODS[k]; return m.ready && (!m.roles || !S.role || m.roles.indexOf(S.role) > -1); });
-    return (open.length ? '<section class="mods" data-d="380"><h2>أقسام المنصة</h2><ul>' + open.map(function (k) { return '<li><a href="#' + k + '"><strong>' + MODS[k].title + '</strong><small>' + MODS[k].say + '</small></a></li>'; }).join('') + '</ul></section>' : '') +
+    var look = { theories: ['violet', 'rosette'], kids: ['mint', 'toys'], decide: ['coral', 'rings'], explore: ['night', 'star'], assistant: ['sun', 'star'] };
+    return (open.length ? '<section class="mods" data-d="380"><h2>أقسام المنصة</h2><ul>' + open.map(function (k, i) { var lk = look[k] || [['lilac', 'sun', 'coral', 'violet'][i % 4], ['star', 'rosette', 'rings'][i % 3]]; return '<li><a class="mod m-' + lk[0] + '" href="#' + k + '" data-glow><span class="mod-art">' + motif(lk[1]) + '</span><strong>' + MODS[k].title + '</strong><small>' + MODS[k].say + '</small></a></li>'; }).join('') + '</ul></section>' : '') +
       '<section class="soon" data-d="420"><h2>قريباً</h2><ul>' + later.map(function (c) { return '<li><strong>' + c[0] + '</strong><small>' + c[1] + '</small></li>'; }).join('') + '</ul></section>';
   }
 
@@ -411,7 +428,8 @@
   function morphStage() {
     var g = girih(1.5), r = seeded(23), i, h = '<svg class="morph" id="morph" viewBox="-230 -230 460 460" aria-hidden="true" focusable="false">';
     h += '<g class="m-rings">' + [[206, 0, 0, 'a'], [158, -6, 8, 'b'], [112, -12, 16, 'c'], [70, -18, 24, 'd']].map(function (c) { return '<circle class="m-ring ' + c[3] + '" cx="' + c[1] + '" cy="' + c[2] + '" r="' + c[0] + '"/>'; }).join('') + '</g>';
-    h += '<g class="m-ros"><polygon class="m-frame" points="' + g.frame.join(' ') + '"/>' + g.gaps.map(function (p) { return '<polygon class="m-gap" points="' + p + '"/>'; }).join('') + g.petals.map(function (p, k) { return '<polygon class="m-petal' + (k === 6 ? ' next' : '') + '" points="' + p + '"/>'; }).join('') + '<polygon class="m-core" points="' + g.star.join(' ') + '"/></g>';
+    h += '<g class="m-ripples">' + [0, 1, 2].map(function (k) { return '<circle class="m-ripple" cx="0" cy="0" r="' + (150 + k * 30) + '"/>'; }).join('') + '</g>';
+    h += '<g class="m-ros"><polygon class="m-frame" pathLength="1" points="' + g.frame.join(' ') + '"/>' + g.petals.map(function (p) { return '<polygon class="m-out" pathLength="1" points="' + p + '"/>'; }).join('') + g.gaps.map(function (p) { return '<polygon class="m-gap" points="' + p + '"/>'; }).join('') + g.petals.map(function (p, k) { return '<polygon class="m-petal c' + (k % 5) + '" points="' + p + '"/>'; }).join('') + '<polygon class="m-core" points="' + g.star.join(' ') + '"/></g>';
     var scatter = [], line = '';
     var sx = [176, 118, 150, 60, 22, -40, -96, -70, -150, -190], sy = [-150, -60, 70, -120, 30, 150, -20, -170, 110, -70];
     for (i = 0; i < 10; i++) scatter.push([f1(sx[i] + (r() - 0.5) * 24), f1(sy[i] + (r() - 0.5) * 24)]);
@@ -423,18 +441,22 @@
     }
     return h + '</g></svg>';
   }
+  function marquee(rev) {
+    var one = QUESTIONS.map(function (t) { return '<span class="mq-i">' + t + '</span><svg class="mq-s" viewBox="-10 -10 20 20"><use href="#star4" x="-10" y="-10" width="20" height="20"/></svg>'; }).join('');
+    return '<div class="marquee' + (rev ? ' rev' : '') + '" aria-hidden="true"><div class="marquee-in">' + one + one + '</div></div>';
+  }
   function welcome() {
     var ch = [
       ['نجوم', 'بتكتشف اللي عندك', [0, 1], 'star'],
       ['زخرفة', 'بتربطه في بناء واحد', [2, 3], 'rosette'],
       ['حلقات', 'وبيكبر بالممارسة', [4], 'rings']
     ];
-    return '<div class="intro" id="intro"><canvas class="intro-sky" id="introSky" aria-hidden="true"></canvas>' +
+    return '<div class="intro" id="intro"><canvas class="aurora intro-aurora" data-aurora aria-hidden="true"></canvas><canvas class="intro-sky" id="introSky" aria-hidden="true"></canvas>' +
       '<section class="scene s1"><h1 class="s1-title"><span class="s1-brand">' + esc(BRAND) + '</span><span class="s1-line">من القدرة</span> <span class="s1-line">للإنجاز</span></h1>' +
       '<p class="s1-lead">منصة واحدة للباحث والأخصائي وولي الأمر. بتمشي معاك من أول سؤال لحد نتيجة تقدر تثبتها.</p><p class="s1-cue" aria-hidden="true"><span>انزل</span><i></i></p></section>' +
-      '<div class="story"><div class="stage">' + morphStage() + '</div>' + ch.map(function (c, i) {
-        return '<section class="scene ch ch' + (i + 1) + '"><div class="ch-in"><div class="ch-glyph rv">' + motif(c[3]) + '</div><p class="ch-no num rv">' + pad2(i + 1) + '</p><h2 class="ch-word rv">' + c[0] + '</h2><p class="ch-say rv">' + c[1] + '</p><ol class="ch-q">' + c[2].map(function (q) { return '<li class="rv"><span class="num">' + pad2(q + 1) + '</span>' + QUESTIONS[q] + '</li>'; }).join('') + '</ol></div></section>';
-      }).join('') + '</div>' +
+      marquee(false) + '<div class="story"><div class="stage">' + morphStage() + '</div>' + ch.map(function (c, i) {
+        return '<section class="scene ch ch' + (i + 1) + '"><div class="ch-in"><div class="ch-glyph rv">' + motif(c[3]) + '</div><p class="ch-no num rv">' + pad2(i + 1) + '</p><h2 class="ch-word rv"><span class="mk"><span>' + c[0] + '</span></span></h2><p class="ch-say rv">' + c[1] + '</p><ol class="ch-q">' + c[2].map(function (q) { return '<li class="rv"><span class="num">' + pad2(q + 1) + '</span>' + QUESTIONS[q] + '</li>'; }).join('') + '</ol></div></section>';
+      }).join('') + '</div>' + marquee(true) +
       '<section class="scene s5" id="choose"><h2 class="s5-title">إنت مين؟</h2><p class="s5-lead">اختيارك بيحدد الأقسام اللي تظهر لك. تقدر تغيّره في أي وقت.</p>' + roleChoices() + '</section></div>';
   }
   function introSeen() { try { return localStorage.getItem(INTRO_KEY) === '1'; } catch (e) { return introSeen.mem; } }
@@ -461,7 +483,7 @@
       t = left ? 'فاضل لك <em class="num">' + plural(left, 'جزء واحد', 'جزئين', 'أجزاء', 'جزء') + '</em> وتكمّل خطة بحثك' : 'خطة بحثك <em>اكتملت</em>';
       lead = 'عندك ' + plural(S.projects.length, 'مشروع واحد', 'مشروعين', 'مشاريع', 'مشروع') + ' على الجهاز ده.';
     } else { t = 'ابدأ مشروعك <em>البحثي الأول</em>'; lead = 'هنمشي معاك خطوة خطوة، من السؤال لخطة التحليل.'; }
-    h += '<header class="head dash-head"><h1 class="mega">' + t + '</h1><p class="lead">' + lead + '</p>' + (r ? '' : '<p class="row dash-cta"><a class="btn primary big mag" href="#role">ابدأ: اختار دورك</a><button class="btn" type="button" id="replayIntro">شوف المقدمة</button></p>') + '</header>';
+    h += '<header class="head dash-head"><canvas class="aurora" data-aurora aria-hidden="true"></canvas><h1 class="mega" data-reveal="words">' + t + '</h1><p class="lead">' + lead + '</p>' + (r ? '' : '<p class="row dash-cta"><a class="btn primary big mag" href="#role">ابدأ: اختار دورك</a><button class="btn" type="button" id="replayIntro">شوف المقدمة</button></p>') + '</header>';
     h += '<div class="bento b-' + (r || 'guest') + '">' + (works ? skyTile(p) + guideTile(p) + skillsTile() : '') + (kids ? kidsTile(r) : '') + labsTile() + soonTile() + '</div>';
     main.innerHTML = h;
     var nb = $('#homeNew'); if (nb) nb.addEventListener('click', newProject);
@@ -469,7 +491,7 @@
   };
 
   V.labs = function () {
-    main.innerHTML = '<header class="head"><h1 class="mega">المعامل</h1><p class="lead">الموقعين الأصليين شغالين زي ما هم. افتح المعمل اللي محتاجه.</p></header><div class="lab-grid">' +
+    main.innerHTML = '<header class="head"><h1 class="mega" data-reveal="words">المعامل</h1><p class="lead">الموقعين الأصليين شغالين زي ما هم. افتح المعمل اللي محتاجه.</p></header><div class="lab-grid">' +
       '<a class="tile block coral lab big" data-d="0" href="' + LABS.scales + '">' + LAB_ART.measure + '<span class="lab-name">معمل القياس النفسي</span><span class="lab-say">بناء المقاييس، الثبات والصدق، تحليل البنود، بنك المقاييس، ووضع الامتحان.</span><span class="go">افتح المعمل</span></a>' +
       '<a class="tile block lilac lab big" data-d="90" href="' + LABS.stats + '">' + LAB_ART.stats + '<span class="lab-name">معمل الإحصاء النفسي</span><span class="lab-say">الاختبارات الإحصائية، حجم العينة والقوة، قراءة مخرجات SPSS، وكتابة النتايج.</span><span class="go">افتح المعمل</span></a></div>';
   };
@@ -542,6 +564,7 @@
     }).join('') + '</div>';
     main.innerHTML = h;
     $('#newP').addEventListener('click', newProject);
+    $$('.pcard', main).forEach(function (c) { c.addEventListener('click', function () { var r1 = $('.pcard-ros', c), t1 = $('h2', c); if (r1) r1.style.viewTransitionName = 'pros'; if (t1) t1.style.viewTransitionName = 'ptitle'; }); });
   };
 
   V.project = function (id, step) {
@@ -549,12 +572,13 @@
     if (!p) { main.innerHTML = '<div class="card empty"><p class="empty-t">المشروع ده مش موجود على الجهاز ده.</p><p><a class="btn" href="#projects">رجوع للمشاريع</a></p></div>'; return; }
     step = step || 'overview';
     var h = '<p class="crumb"><a href="#projects">' + ic('back') + 'كل المشاريع</a></p>' +
-      '<div class="ptitle"><label for="ptitle">عنوان المشروع</label><textarea id="ptitle" rows="1" placeholder="اكتب عنوان مبدئي">' + esc(p.title) + '</textarea></div>' +
+      '<div class="ptitle"><span class="pros" id="pros">' + rosette(p, false) + '</span><div class="ptitle-f"><label for="ptitle">عنوان المشروع</label><textarea id="ptitle" rows="1" placeholder="اكتب عنوان مبدئي">' + esc(p.title) + '</textarea></div></div>' +
       '<div class="steps" role="tablist" aria-label="أجزاء المشروع"><button type="button" role="tab" data-step="overview" class="ov" aria-selected="' + (step === 'overview') + '"><span class="dot">' + ic('steps') + '</span><span class="lbl">نظرة عامة</span></button>' +
       STEPS.map(function (s, i) { var ok = stepDone(p, s[0]); return '<button type="button" role="tab" data-step="' + s[0] + '" class="' + (ok ? 'done' : '') + '" aria-selected="' + (step === s[0]) + '"><span class="dot num">' + (ok ? ic('check') : i + 1) + '</span><span class="lbl">' + s[1] + '</span>' + (ok ? sr('مكتمل') : '') + '</button>'; }).join('') + '</div><div id="pane"></div>';
     main.innerHTML = h;
     var strip = $('.steps', main), cur = $('[aria-selected="true"]', strip);
     if (cur) strip.scrollLeft = cur.offsetLeft - (strip.clientWidth - cur.offsetWidth) / 2;
+    $$('button', strip).forEach(function (b, i) { b.style.setProperty('--i', i); });
     var ti = $('#ptitle');
     function fit() { ti.style.height = 'auto'; ti.style.height = ti.scrollHeight + 'px'; }
     fit();
@@ -569,8 +593,29 @@
     else if (TEXT[step]) textPane(p, step, pane);
     else overview(p, pane);
     if (step === 'analysis') pane.insertAdjacentHTML('afterbegin', advise(p));
+    var was = STEPS.map(function (s) { return stepDone(p, s[0]); });
+    touch.after = function (q) {
+      if (q !== p || !$('#pros')) return;
+      var now = STEPS.map(function (s) { return stepDone(p, s[0]); }), gained = [], changed = false;
+      var names = [];
+      now.forEach(function (ok, i) {
+        if (ok === was[i]) return;
+        changed = true;
+        var b = $('.steps [data-step="' + STEPS[i][0] + '"]');
+        if (b) { b.classList.toggle('done', ok); $('.dot', b).innerHTML = ok ? ic('check') : String(i + 1); }
+        if (ok) { gained.push(b); names.push(STEPS[i][1]); }
+      });
+      was = now;
+      if (!changed) return;
+      var em = $('#pros'); em.innerHTML = rosette(p, false);
+      $$('[data-d]', em).forEach(function (el) { el.style.animationDelay = '0ms'; });
+      if (!gained.length) return;
+      var all = now.every(Boolean), M = window.HubMotion;
+      if (M && !calm()) { M.turn(em); gained.forEach(function (b) { if (b) M.burst($('.dot', b), 12); }); if (all) M.celebrate(); }
+      toast(all ? 'كمّلت الأجزاء العشرة' : 'جزء «' + names[0] + '» اكتمل');
+    };
   };
-  function touch(p) { p.updated = today(); save(); }
+  function touch(p) { p.updated = today(); save(); if (touch.after) touch.after(p); }
   function tick() { var s = $('#saved'); if (!s) return; s.classList.remove('tick'); void s.offsetWidth; s.classList.add('tick'); }
 
   function overview(p, pane) {
@@ -862,13 +907,26 @@
         '<div class="helprow cols"><span class="helprow-t">اشرح لي:</span>' + [['v-name', 'اسم المتغير'], ['v-role', 'دوره'], ['v-level', 'مستوى القياس'], ['v-groups', 'عدد المجموعات'], ['v-tool', 'بيتقاس بإيه']].map(function (c) { return '<button class="chipbtn" type="button" data-shared data-explain="' + c[0] + '" aria-expanded="false" aria-controls="xp-' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
         ['v-name', 'v-role', 'v-level', 'v-groups', 'v-tool'].map(function (k) { return '<div class="xpanel" id="xp-' + k + '" hidden></div>'; }).join('') + '</div>' + advise(p) + nextBtn(p, 'variables');
       helpWire(p, pane);
-      $('#addV').addEventListener('click', function () { p.vars.push({ name: '', role: p.vars.length ? 'dv' : 'iv', level: 'scale', groups: '', tool: '' }); touch(p); draw(); });
+      $('#addV').addEventListener('click', function () {
+        p.vars.push({ name: '', role: p.vars.length ? 'dv' : 'iv', level: 'scale', groups: '', tool: '' }); touch(p); draw();
+        var row = $('tr[data-i="' + (p.vars.length - 1) + '"]', pane);
+        if (row && row.animate && !calm()) row.animate([{ opacity: 0, transform: 'translateY(-14px)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: 'cubic-bezier(.16,1,.3,1)' });
+      });
       $$('tr[data-i]', pane).forEach(function (tr) {
         var v = p.vars[+tr.getAttribute('data-i')];
         $$('[data-k]', tr).forEach(function (el) {
           el.addEventListener('change', function () { v[el.getAttribute('data-k')] = el.value; touch(p); draw(); });
         });
-        $('[data-del]', tr).addEventListener('click', function () { p.vars.splice(+tr.getAttribute('data-i'), 1); touch(p); draw(); });
+        $('[data-del]', tr).addEventListener('click', function () {
+          var idx = +tr.getAttribute('data-i');
+          function drop() {
+            var tops = $$('tr[data-i]', pane).map(function (x) { return x.getBoundingClientRect().top; });
+            p.vars.splice(idx, 1); touch(p); draw();
+            if (calm()) return;
+            $$('tr[data-i]', pane).forEach(function (x, k) { var from = tops[k >= idx ? k + 1 : k], dy = from - x.getBoundingClientRect().top; if (dy && x.animate) x.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.16,1,.3,1)' }); });
+          }
+          if (tr.animate && !calm()) tr.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-24px)' }], { duration: 170, easing: 'ease-in' }).onfinish = drop; else drop();
+        });
       });
     }
     draw();
@@ -959,6 +1017,7 @@
     var parts = (location.hash || '#home').slice(1).split('/'), r = parts[0];
     if (!V[r] && !MODS[r]) r = 'home';
     if (window.HubMotion) window.HubMotion.stop();
+    touch.after = null;
     document.body.classList.remove('is-intro');
     if (MODS[r]) modView(r, parts[1], parts[2]); else V[r](parts[1], parts[2]);
     drawNav(r === 'project' ? 'projects' : r);
@@ -970,7 +1029,7 @@
   /* After a render: hand each marked element its place in the entrance sequence, and count numbers up. */
   function stage(r) {
     $$('[data-d]', main).forEach(function (el) { el.style.animationDelay = el.getAttribute('data-d') + 'ms'; });
-    if (!calm()) $$('[data-count]', main).forEach(function (el) {
+    if (!calm()) $$('text[data-count]', main).forEach(function (el) {
       var to = +el.getAttribute('data-count'), t0 = 0;
       if (!(to > 0)) return;
       function step(t) { if (!t0) { t0 = t + 500; el.textContent = '0'; } var k = Math.min(1, Math.max(0, (t - t0) / 800)); el.textContent = String(Math.round(to * (1 - Math.pow(1 - k, 3)))); if (k < 1 && el.isConnected) requestAnimationFrame(step); else el.textContent = String(to); }
@@ -979,7 +1038,11 @@
     if (window.HubMotion) window.HubMotion.after(main, r);
   }
   /* Route changes cross-fade through the View Transitions API where it exists; otherwise they are instant. */
+  var ORDER = ['home', 'projects', 'project', 'profile', 'family', 'theories', 'kids', 'decide', 'explore', 'assistant', 'labs', 'role'];
+  function rank(hash) { var a = (hash || '#home').slice(1).split('/'), i = ORDER.indexOf(a[0]); if (i < 0) i = 0; if (a[0] === 'project') i += (STEPS.map(function (x) { return x[0]; }).indexOf(a[2]) + 2) / 100; return i; }
+  var lastRank = rank(location.hash);
   function go() {
+    var nr = rank(location.hash); document.documentElement.setAttribute('data-dir', nr >= lastRank ? 'fwd' : 'back'); lastRank = nr;
     if (route.ready && document.startViewTransition && !calm()) { try { var vt = document.startViewTransition(route), quiet = function () {}; vt.ready.catch(quiet); vt.finished.catch(quiet); vt.updateCallbackDone.catch(quiet); return; } catch (e) {} }
     route();
   }
@@ -992,4 +1055,5 @@
   };
   window.addEventListener('hashchange', go);
   route();
+  setTimeout(function () { document.documentElement.classList.remove('boot'); }, 1800);
 })();
