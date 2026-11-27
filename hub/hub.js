@@ -99,7 +99,7 @@
   /* Sections that live in their own files (hub/mod-<name>.js + .css) and load on first visit.
      A section file calls Hub.register(name, function (main, a, b) { ... }). Flip `ready` once the file ships. */
   var MODS = {
-    theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: false },
+    theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: true },
     kids: { title: 'ألعاب وأنشطة الأطفال', short: 'الألعاب', say: 'ذاكرة، انتباه، استدلال، مرونة، إبداع', roles: ['parent', 'specialist'], ready: false },
     decide: { title: 'بحوث العمليات والقرار', short: 'القرار', say: 'توزيع العينة، الميزانية مقابل القوة، مقارنة البدائل', roles: ['researcher', 'student', 'specialist'], ready: false },
     explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: false },
