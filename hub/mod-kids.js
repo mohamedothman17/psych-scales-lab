@@ -55,8 +55,9 @@
     var ks = Object.keys(vs).map(Number), kc = Object.keys(vc).map(Number), kz = Object.keys(vz).map(Number);
     if (kc.length < 2) kc.push(C[1]);
     ks.forEach(function (s) { kc.forEach(function (c) { kz.forEach(function (z) { var t = { s: s, c: c, z: z }; if (key(t) !== key(ans)) cand.push(t); }); }); });
+    var shown = {}; cells.forEach(function (t, k) { if (k !== miss) shown[key(t)] = 1; });
+    function diff(t) { return (shown[key(t)] ? 0 : 10) + (t.s !== ans.s) + (t.c !== ans.c) + (t.z !== ans.z); }
     cand = shuffle(r, cand).sort(function (a, b) { return diff(a) - diff(b); });
-    function diff(t) { return (t.s !== ans.s) + (t.c !== ans.c) + (t.z !== ans.z); }
     var opts = [ans], nOpt = level <= 2 ? 3 : 4;
     cand.forEach(function (t) { if (opts.length < nOpt && !seen[key(t)]) { seen[key(t)] = 1; opts.push(t); } });
     opts = shuffle(r, opts);
@@ -151,6 +152,340 @@
   function fmtDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return '<bdi class="num" dir="ltr">' + (m ? m[3] + '/' + m[2] + '/' + m[1] : esc(iso)) + '</bdi>'; }
   function n(v) { return '<bdi class="num">' + esc(v) + '</bdi>'; }
 
-  /*__GAMES__*/
+  /* ---------- play shell ---------- */
+  var STOP = { stop: true }, LIVE = null, AC = null, CAP_MS = 270000;
+  var OK_SAY = ['برافو على تركيزك!', 'حلو قوي، كمّل!', 'شاطر إنك بصّيت كويس!', 'تمام كده، كمّل!'], TRY_SAY = ['قرّبت! نجرب واحدة تانية.', 'ولا يهمّك، المهم إنك بتحاول.', 'محاولة حلوة، نكمّل.'];
+  function kill() {
+    var c = LIVE; if (!c) return; LIVE = null; c.dead = true;
+    c.rej.splice(0).forEach(function (f) { f(STOP); });
+    c.keys.forEach(function (f) { document.removeEventListener('keydown', f, true); });
+    document.documentElement.classList.remove('mkids-lock');
+  }
+  window.addEventListener('hashchange', kill);
+  function beep(k) {
+    if (!D().sound) return;
+    try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); var o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = 330 * Math.pow(1.122, k % 9); g.gain.value = 0.07; o.connect(g); g.connect(AC.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.2); o.stop(AC.currentTime + 0.22); } catch (e) {}
+  }
+  function play(main, kid, id) {
+    var A = ACTS[id], d = D();
+    main.innerHTML = DEFS + '<div class="mkids-play mkids-t-' + A.tone + '" id="mkids-play" data-act="' + id + '" data-phase="intro">' +
+      '<header class="mkids-bar"><button type="button" class="mkids-stop" id="mkids-stop">' + HAND + '<span>مش عاوز ألعب دلوقتي</span></button><div class="mkids-dots" id="mkids-dots" aria-hidden="true"></div></header>' +
+      '<div class="mkids-say"><span id="mkids-bud">' + buddy() + '</span><p id="mkids-line" role="status" aria-live="polite"></p></div>' +
+      '<div class="mkids-stage" id="mkids-stage"></div></div>';
+    var root = $('#mkids-play', main), stage = $('#mkids-stage', root), line = $('#mkids-line', root), praise = 0;
+    var c = LIVE = {
+      stage: stage, rng: makeRng(SEED != null ? SEED : (Date.now() ^ (Math.random() * 1e9)) >>> 0), dead: false, rej: [], keys: [], da: false, t0: 0, started: false,
+      res: { lvl: 0, n: 0, err: 0, hints: null, x: {} }, dev: {},
+      say: function (t, mood) { line.textContent = t; $('#mkids-bud', root).innerHTML = buddy(mood); },
+      wait: function (ms) {
+        return new Promise(function (res, rej) {
+          if (c.dead) return rej(STOP);
+          c.rej.push(rej);
+          setTimeout(function () { var i = c.rej.indexOf(rej); if (i > -1) c.rej.splice(i, 1); if (c.dead || !root.isConnected) rej(STOP); else res(); }, ms * SPEED);
+        });
+      },
+      tap: function (sel) {
+        return new Promise(function (res, rej) {
+          if (c.dead) return rej(STOP);
+          c.rej.push(rej);
+          function on(e) {
+            var t = e.target.closest ? e.target.closest(sel) : null;
+            if (!t || !stage.contains(t) || t.disabled || t.getAttribute('aria-disabled') === 'true') return;
+            stage.removeEventListener('click', on); var i = c.rej.indexOf(rej); if (i > -1) c.rej.splice(i, 1); res(t);
+          }
+          stage.addEventListener('click', on);
+        });
+      },
+      onKey: function (f) { c.keys.push(f); document.addEventListener('keydown', f, true); },
+      dots: function (done, total) { var h = ''; for (var i = 0; i < total; i++) h += '<i' + (i < done ? ' class="on"' : '') + '></i>'; $('#mkids-dots', root).innerHTML = h; },
+      late: function () { return Date.now() - c.t0 > CAP_MS; },
+      sfx: beep,
+      cheer: function (ok, ms) { c.say(ok ? OK_SAY[praise++ % OK_SAY.length] : TRY_SAY[praise++ % TRY_SAY.length], ok ? '' : 'calm'); if (ok) beep(7); return c.wait(ms || 1000); }
+    };
+    document.documentElement.classList.add('mkids-lock');
+    root.addEventListener('pointerdown', function (e) { var k = e.pointerType || 'mouse'; c.dev[k] = (c.dev[k] || 0) + 1; }, true);
+    root.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ' || /^Arrow/.test(e.key)) c.dev.keyboard = (c.dev.keyboard || 0) + 1; }, true);
+
+    function finish(done) {
+      if (c.ended) return; c.ended = true;
+      var saved = null;
+      if (c.started) {
+        var dv = Object.keys(c.dev).sort(function (a, b) { return c.dev[b] - c.dev[a]; })[0] || 'unknown', now = new Date();
+        saved = { id: H.uid(), d: H.today(), t: ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2), a: id, done: done ? 1 : 0, lvl: c.res.lvl || 0, n: c.res.n || 0, err: c.res.err || 0,
+          hints: c.res.hints, da: c.da ? 1 : 0, dur: Math.round((Date.now() - c.t0) / 1000), dev: dv, vp: window.innerWidth + 'x' + window.innerHeight, x: c.res.x || {}, note: '' };
+        var lg = logOf(kid.id); lg.push(saved); if (lg.length > 300) lg.splice(0, lg.length - 300);
+        H.save();
+      }
+      kill();
+      root.dataset.phase = 'end'; $('#mkids-stop', root).hidden = true; $('#mkids-dots', root).innerHTML = '';
+      line.textContent = ''; $('.mkids-say', root).hidden = true;
+      var NOTES = ['الطفل كان تعبان', 'في دوشة', 'اللعب اتقاطع', 'كان مركّز ومبسوط'];
+      stage.innerHTML = '<div class="mkids-end"><div class="mkids-end-art">' + buddy(done ? '' : 'calm') + (saved ? star('mkids-prize') : '') + '</div>' +
+        '<h1>' + (done ? 'خلصنا يا ' : 'تمام يا ') + esc(kid.child) + '!</h1>' +
+        '<p class="mkids-end-line">' + (done ? 'شكراً إنك لعبت وركّزت. نجمة جديدة اتضافت لرحلتك.' : saved ? 'نكمّل في وقت تاني. شكراً إنك جرّبت، ونجمتك محفوظة.' : 'نلعب في وقت تاني لما تحب.') + '</p>' +
+        '<a class="mkids-go" id="mkids-home" href="#kids/' + esc(kid.id) + '">رجوع للرحلة</a>' +
+        (saved ? '<div class="mkids-note"><p>للكبار: ملاحظة عن الجلسة (اختياري)</p><div class="mkids-chips">' + NOTES.map(function (t) { return '<button type="button" class="mkids-chip" aria-pressed="false">' + t + '</button>'; }).join('') + '</div>' +
+          '<label class="sr" for="mkids-note">ملاحظة</label><input type="text" id="mkids-note" maxlength="160" placeholder="أو اكتب ملاحظتك"></div>' : '') + '</div>';
+      if (saved) {
+        var inp = $('#mkids-note', stage), keep = function () { saved.note = inp.value.trim(); H.save(); };
+        inp.addEventListener('input', keep);
+        $$('.mkids-chip', stage).forEach(function (b) { b.addEventListener('click', function () { var on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on); var parts = inp.value.split('، ').filter(function (p) { return p && p !== b.textContent; }); if (on) parts.push(b.textContent); inp.value = parts.join('، '); keep(); }); });
+        if (done && window.HubMotion && !H.calm()) try { window.HubMotion.burst($('.mkids-prize', stage), 12); } catch (e) {}
+      }
+      $('#mkids-home', stage).focus();
+    }
+    $('#mkids-stop', root).addEventListener('click', function () { finish(false); });
+    c.say(A.line);
+    stage.innerHTML = '<div class="mkids-intro"><div class="mkids-intro-art">' + ART[id] + '</div><h1>' + A.name + '</h1>' +
+      '<button type="button" class="mkids-go" id="mkids-start">يلا نلعب</button>' +
+      (A.da ? '<label class="mkids-da"><input type="checkbox" id="mkids-da"' + (d.da ? ' checked' : '') + '><span>للكبار: مساعدة متدرّجة لما يتعثّر (إعادة، ثم توضيح، ثم نحلّها سوا)</span></label>' : '') + '</div>';
+    $('#mkids-start', stage).addEventListener('click', function () {
+      if (A.da) { c.da = $('#mkids-da', stage).checked; d.da = c.da; }
+      c.started = true; c.t0 = Date.now(); root.dataset.phase = 'play';
+      GAMES[id](c).then(function () { finish(true); }, function (e) { if (e !== STOP) { finish(false); throw e; } });
+    });
+    $('#mkids-start', stage).focus();
+  }
+
+  /* ---------- the games ---------- */
+  var GAMES = {};
+
+  /* Spatial sequence memory: nine stars in a fixed scattered layout; one star a second; no star twice in a sequence. */
+  GAMES.stars = async function (c) {
+    c.stage.innerHTML = '<div class="mkids-sky" id="mkids-sky" data-mode="wait">' + STAR_POS.map(function (p, i) { return '<button type="button" class="mkids-star" data-i="' + i + '" aria-label="نجمة ' + (i + 1) + '">' + star() + '<b class="mkids-ord" aria-hidden="true"></b></button>'; }).join('') + '</div>';
+    var sky = $('#mkids-sky', c.stage), bs = $$('.mkids-star', sky);
+    bs.forEach(function (b, i) { b.style.setProperty('left', STAR_POS[i][0] + '%'); b.style.setProperty('top', STAR_POS[i][1] + '%'); });
+    function mode(m) { sky.dataset.mode = m; bs.forEach(function (b) { b.setAttribute('aria-disabled', m === 'go' || m === 'guide' ? 'false' : 'true'); }); }
+    async function show(seq, nums) {
+      mode('watch'); await c.wait(600);
+      for (var k = 0; k < seq.length; k++) { var b = bs[seq[k]]; b.classList.add('lit'); if (nums) { b.classList.add('num'); $('.mkids-ord', b).textContent = k + 1; } c.sfx(seq[k]); await c.wait(nums ? 1000 : 700); b.classList.remove('lit'); await c.wait(300); }
+      if (nums) { await c.wait(700); bs.forEach(function (x) { x.classList.remove('num'); $('.mkids-ord', x).textContent = ''; }); }
+    }
+    async function attempt(seq) {
+      mode('go'); var got = [];
+      while (got.length < seq.length) { var b = await c.tap('.mkids-star'); got.push(+b.dataset.i); b.classList.add('tap'); c.sfx(+b.dataset.i); unTap(b); }
+      mode('wait'); await c.wait(300); return got.join() === seq.join();
+    }
+    function unTap(b) { setTimeout(function () { b.classList.remove('tap'); }, 380 * SPEED + 20); }
+    async function guided(seq) {
+      mode('guide');
+      for (var k = 0; k < seq.length; k++) { var b = bs[seq[k]], t; b.classList.add('lit'); do { t = await c.tap('.mkids-star'); } while (t !== b); c.sfx(seq[k]); b.classList.remove('lit'); await c.wait(200); }
+      mode('wait');
+    }
+    async function trial(len, scored) {
+      var seq = genStars(c.rng, len), hint = 0, h = scored ? 1 : 3, first, ok;
+      sky.dataset.len = len;
+      c.say('بصّ على النجوم…'); await show(seq); c.say('دورك! دوس عليهم بنفس الترتيب.'); first = ok = await attempt(seq);
+      while (!ok && (c.da || !scored) && h <= 3) {
+        hint = h;
+        if (h === 1) { c.say('نشوفهم تاني براحة.', 'calm'); await show(seq); c.say('دورك!'); ok = await attempt(seq); }
+        else if (h === 2) { c.say('المرة دي كل نجمة عليها رقمها.', 'calm'); await show(seq, true); c.say('دورك!'); ok = await attempt(seq); }
+        else { c.say('نعملها سوا: دوس على النجمة اللي منوّرة.'); await guided(seq); ok = true; }
+        h++;
+      }
+      return { first: first, hint: hint };
+    }
+    c.say('نجرّب الأول.'); await c.wait(900);
+    sky.dataset.practice = '1';
+    for (var p = 0; p < 2; p++) { var pr = await trial(2, false); await c.cheer(pr.first || true, 900); }
+    delete sky.dataset.practice;
+    var stair = new Stair(2, 2, 9), N = 10;
+    if (c.da) c.res.hints = [0, 0, 0, 0];
+    for (var t = 0; t < N && !c.late(); t++) {
+      c.dots(t, N);
+      var r = await trial(stair.level, true);
+      c.res.n++; if (!r.first) c.res.err++; if (c.da) c.res.hints[r.hint]++;
+      stair.result(r.first); c.res.lvl = stair.best; c.res.x.trail = stair.trail.join(' ');
+      c.dots(t + 1, N); await c.cheer(r.first);
+    }
+  };
+
+  /* Go/no-go: the cat (go, 3 in 4) builds the habit of pressing; the dog (no-go, 1 in 4) asks the child to hold back. */
+  GAMES.gng = async function (c) {
+    c.stage.innerHTML = '<div class="mkids-gng"><div class="mkids-hole" id="mkids-hole" data-kind="" data-last=""><div class="mkids-peek" id="mkids-peek"></div><span class="mkids-fb" id="mkids-fb" aria-hidden="true">' + star() + '</span></div>' +
+      '<button type="button" class="mkids-wave" id="mkids-wave">' + HAND + '<span>سلّم!</span></button></div>';
+    var hole = $('#mkids-hole', c.stage), peek = $('#mkids-peek', c.stage), btn = $('#mkids-wave', c.stage);
+    var open = false, pressed = null, t0 = 0, wake = null, x = c.res.x = { go: 0, nogo: 0, hit: 0, miss: 0, fa: 0, cr: 0, early: 0, rts: [], trail: '' };
+    function press(e) {
+      if (e.type === 'keydown') { if ((e.key !== ' ' && e.key !== 'Enter') || e.repeat || (e.target.closest && e.target.closest('.mkids-stop'))) return; e.preventDefault(); }
+      if (!open) { x.early++; return; }
+      if (pressed == null) { pressed = performance.now() - t0; btn.classList.add('down'); if (wake) wake(); }
+    }
+    btn.addEventListener('pointerdown', press); hole.addEventListener('pointerdown', press); c.onKey(press);
+    async function trial(go, win, teach) {
+      hole.dataset.kind = ''; peek.innerHTML = ''; btn.classList.remove('down');
+      await c.wait(700 + rint(c.rng, 5) * 100);
+      pressed = null; peek.innerHTML = go ? cat() : dog(); hole.dataset.kind = go ? 'cat' : 'dog'; t0 = performance.now(); open = true;
+      if (teach) c.say(go ? 'دي القطة: سلّم عليها!' : 'ده الكلب: استنى، ما تدوسش.', go ? '' : 'calm');
+      await new Promise(function (res, rej) { wake = res; c.wait(win).then(res, rej); });
+      open = false; wake = null;
+      var resp = pressed != null, kind = go ? (resp ? 'hit' : 'miss') : (resp ? 'fa' : 'cr');
+      hole.dataset.last = kind; hole.dataset.kind = '';
+      if (kind === 'hit') { hole.classList.add('yay'); c.sfx(6); await c.wait(380); hole.classList.remove('yay'); }
+      else if (kind === 'fa') { c.say('ده كلب! نستناه يعدّي.', 'calm'); await c.wait(1100); }
+      else if (kind === 'miss') { c.say('القطة مشيت. المرة الجاية نلحقها.', 'calm'); await c.wait(900); }
+      else { if (teach) c.say('برافو، استنيت!'); await c.wait(teach ? 900 : 300); }
+      peek.innerHTML = '';
+      return { kind: kind, rt: resp ? Math.round(pressed) : null };
+    }
+    c.say('نجرّب الأول.'); await c.wait(900);
+    hole.dataset.practice = '1';
+    var pr = [1, 1, 0, 1]; for (var p = 0; p < pr.length; p++) await trial(pr[p], 2600, true);
+    delete hole.dataset.practice;
+    c.say('يلا بجد! سلّم على القطة بس.'); await c.wait(1200);
+    var order = genGng(c.rng, 36), stair = new Stair(1, 1, 6), bErr = 0, BLOCK = 6;
+    for (var t = 0; t < order.length && !c.late(); t++) {
+      c.dots(t, order.length);
+      if (t % BLOCK === 0) c.say('سلّم على القطة بس.');
+      var r = await trial(order[t], GNG_WIN[stair.level], false);
+      c.res.n++; if (order[t]) x.go++; else x.nogo++; x[r.kind]++;
+      if (r.kind === 'hit') x.rts.push(r.rt);
+      if (r.kind === 'miss' || r.kind === 'fa') { c.res.err++; bErr++; }
+      if ((t + 1) % BLOCK === 0) { stair.result(bErr <= 1); bErr = 0; c.res.lvl = stair.best; x.trail = stair.trail.join(' '); }
+    }
+    c.dots(order.length, order.length);
+  };
+
+  /* Rule switching: sort by colour first, then the rule turns to shape and keeps turning; shorter runs as the child succeeds. */
+  GAMES.flip = async function (c) {
+    var BIN = [{ s: 0, c: 0 }, { s: 1, c: 1 }], CARD = [{ s: 0, c: 1 }, { s: 1, c: 0 }], RN = { c: 'باللون', s: 'بالشكل' };
+    var CUE = { c: '<svg class="mkids-cue" viewBox="0 0 64 40" aria-hidden="true" focusable="false"><rect x="2" y="4" width="28" height="32" rx="8" class="mkids-c0"/><rect x="34" y="4" width="28" height="32" rx="8" class="mkids-c1"/><rect x="34" y="4" width="28" height="32" rx="8" fill="url(#mkids-tx1)"/></svg>',
+      s: '<svg class="mkids-cue" viewBox="0 0 64 40" aria-hidden="true" focusable="false"><circle cx="16" cy="20" r="13" class="mkids-out"/><rect x="36" y="7" width="26" height="26" rx="4" class="mkids-out"/></svg>' };
+    c.stage.innerHTML = '<div class="mkids-flip"><div class="mkids-rule" id="mkids-rule" data-rule=""></div><div class="mkids-card" id="mkids-card"></div>' +
+      '<div class="mkids-bins">' + BIN.map(function (b, i) { return '<button type="button" class="mkids-bin" data-b="' + i + '" aria-label="سلة: ' + tokName(b) + '">' + token(b) + '</button>'; }).join('') + '</div></div>';
+    var ruleEl = $('#mkids-rule', c.stage), cardEl = $('#mkids-card', c.stage), bins = $$('.mkids-bin', c.stage);
+    c.onKey(function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      var right = bins[0].getBoundingClientRect().left > bins[1].getBoundingClientRect().left ? bins[0] : bins[1];
+      e.preventDefault(); (e.key === 'ArrowRight' ? right : (right === bins[0] ? bins[1] : bins[0])).click();
+    });
+    async function setRule(rule, changed) {
+      ruleEl.dataset.rule = rule; ruleEl.innerHTML = CUE[rule] + '<strong>' + RN[rule] + '</strong>';
+      if (changed) { ruleEl.classList.add('new'); c.say('القاعدة اتغيّرت! دلوقتي بنلعب ' + RN[rule] + '.', 'oh'); c.sfx(8); await c.wait(1500); ruleEl.classList.remove('new'); }
+      else c.say('دلوقتي بنلعب ' + RN[rule] + '.');
+    }
+    async function trial(rule) {
+      var card = CARD[rint(c.rng, 2)];
+      cardEl.innerHTML = token(card); cardEl.dataset.s = card.s; cardEl.dataset.c = card.c; cardEl.dataset.n = (+cardEl.dataset.n || 0) + 1;
+      var b = await c.tap('.mkids-bin'), ok = +b.dataset.b === flipAnswer(rule, card);
+      cardEl.innerHTML = ''; cardEl.dataset.s = ''; b.classList.add(ok ? 'ok' : 'no'); cardEl.dataset.last = ok ? 'ok' : 'no';
+      if (ok) { c.sfx(5); await c.wait(380); } else { c.say('دلوقتي بنلعب ' + RN[rule] + '. نكمّل!', 'calm'); await c.wait(1200); }
+      b.classList.remove('ok', 'no');
+      return ok;
+    }
+    var k, rule = 'c';
+    cardEl.dataset.practice = '1';
+    await setRule('c'); for (k = 0; k < 2; k++) await trial('c');
+    await setRule('s', true); for (k = 0; k < 2; k++) await trial('s');
+    delete cardEl.dataset.practice;
+    c.say('يلا بجد!'); await c.wait(1000);
+    var stair = new Stair(1, 1, 5), total = 30, t = 0, run = 0, x = c.res.x = { sw: 0, swErr: 0, stayErr: 0, pre: 0, trail: '' };
+    await setRule(rule);
+    while (t < total && !c.late()) {
+      var len = run === 0 ? 5 : stair.level === 5 ? 1 + rint(c.rng, 2) : FLIP_RUN[stair.level], runErr = 0;
+      for (k = 0; k < len && t < total; k++) {
+        c.dots(t, total);
+        var ok = await trial(rule); t++; c.res.n = t;
+        if (!ok) { c.res.err++; runErr++; if (run === 0) x.pre++; else if (k === 0) x.swErr++; else x.stayErr++; }
+      }
+      if (run > 0) { stair.result(runErr === 0); c.res.lvl = stair.best; x.trail = stair.trail.join(' '); }
+      run++;
+      if (t < total && !c.late()) { rule = rule === 'c' ? 's' : 'c'; x.sw++; await setRule(rule, true); }
+    }
+    c.dots(total, total);
+  };
+
+  /* Pattern completion with graded help: look again, then the structure is marked, then the answer is shown. */
+  GAMES.pattern = async function (c) {
+    function draw(it) {
+      c.stage.innerHTML = '<div class="mkids-pat" id="mkids-pat" data-level="' + it.level + '"' + (SEED != null ? ' data-ai="' + it.ai + '"' : '') + '><div class="mkids-seq mkids-' + it.kind + '" id="mkids-seq">' +
+        it.cells.map(function (t, i) { return '<span class="mkids-cell' + (t ? '' : ' q') + '" data-i="' + i + '">' + (t ? token(t) : '<b aria-label="المكان الناقص">؟</b>') + '</span>'; }).join('') + '</div>' +
+        '<div class="mkids-opts" role="group" aria-label="الاختيارات">' + it.options.map(function (t, i) { return '<button type="button" class="mkids-opt" data-o="' + i + '">' + token(t) + '</button>'; }).join('') + '</div></div>';
+    }
+    async function trial(level, scored) {
+      var it = genPattern(c.rng, level), hint = 0, h = scored ? 1 : 3; draw(it);
+      var pat = $('#mkids-pat', c.stage), cells = $$('.mkids-cell', pat), opts = $$('.mkids-opt', pat), k;
+      c.say('إيه اللي ييجي مكان علامة الاستفهام؟');
+      async function pick() { var b = await c.tap('.mkids-opt'), o = +b.dataset.o; if (o !== it.ai) b.classList.add('tried'); return o === it.ai; }
+      var first = await pick(), ok = first;
+      while (!ok && (c.da || !scored) && h <= 3) {
+        hint = h; pat.dataset.hint = h;
+        if (h === 1) {
+          c.say('بصّ تاني على الأشكال واحد واحد.', 'calm');
+          cells.forEach(function (x) { x.classList.add('veil'); });
+          for (k = 0; k < cells.length; k++) { await c.wait(320); cells[k].classList.remove('veil'); }
+        } else if (h === 2) {
+          c.say('شوف اللي بيتكرّر.', 'calm');
+          cells.forEach(function (x, i) {
+            if (it.kind === 'grid') { if (Math.floor(i / 3) === Math.floor(it.miss / 3) || i % 3 === it.miss % 3) x.classList.add('hl'); }
+            else if (it.unit <= 3) x.classList.add('g' + (Math.floor(i / it.unit) % 2));
+            else if (it.cells[i] && it.cells[i].s === it.answer.s) x.classList.add('hl');
+          });
+          opts.forEach(function (b) { if (b.classList.contains('tried')) b.setAttribute('aria-disabled', 'true'); });
+        } else {
+          c.say('ده اللي بيكمّل النمط. دوس عليه.');
+          opts.forEach(function (b, i) { if (i === it.ai) b.classList.add('want'); else b.setAttribute('aria-disabled', 'true'); });
+        }
+        ok = await pick(); h++;
+      }
+      if (!ok) { c.say('اللي بيكمّل النمط هو ده.', 'calm'); opts[it.ai].classList.add('want'); }
+      cells[it.miss].innerHTML = token(it.answer); cells[it.miss].classList.add('filled');
+      opts.forEach(function (b) { b.setAttribute('aria-disabled', 'true'); });
+      await c.wait(ok ? 500 : 1500);
+      return { first: first, hint: hint };
+    }
+    c.say('نجرّب الأول.'); await c.wait(900);
+    var pr = await trial(1, false); await c.cheer(true, 900);
+    var stair = new Stair(1, 1, PAT_MAX), N = 10;
+    if (c.da) c.res.hints = [0, 0, 0, 0];
+    for (var t = 0; t < N && !c.late(); t++) {
+      c.dots(t, N);
+      var r = await trial(stair.level, true);
+      c.res.n++; if (!r.first) c.res.err++; if (c.da) c.res.hints[r.hint]++;
+      stair.result(r.first); c.res.lvl = stair.best; c.res.x.trail = stair.trail.join(' ');
+      c.dots(t + 1, N); await c.cheer(r.first, 900);
+    }
+  };
+
+  /* Ring tower: move the whole tower to the starred peg. Moves are counted against the minimum 2^n - 1; nothing is shown to the child. */
+  GAMES.tower = async function (c) {
+    async function round(nd) {
+      var pegs = [[], [], []], moves = 0, bad = 0, sel = -1, min = towerMin(nd), cap = min * 4, last = 0, i;
+      for (i = nd; i >= 1; i--) pegs[0].push(i);
+      function draw() {
+        c.stage.innerHTML = '<div class="mkids-tower" id="mkids-tower" data-discs="' + nd + '" data-moves="' + moves + '">' + [0, 1, 2].map(function (p) {
+          return '<button type="button" class="mkids-peg' + (p === 2 ? ' goal' : '') + (p === sel ? ' sel' : '') + '" data-p="' + p + '" data-top="' + (pegs[p][pegs[p].length - 1] || 0) + '" aria-label="العمود ' + (p + 1) + (p === 2 ? ' (الهدف)' : '') + ': ' + pegs[p].length + ' حلقات' + (p === sel ? '، متشال منه حلقة' : '') + '">' +
+            (p === 2 ? star('mkids-flag') : '') + '<span class="mkids-rod"></span><span class="mkids-stack">' + pegs[p].map(function (dk) { return '<i class="mkids-disc d' + dk + '"></i>'; }).join('') + '</span></button>';
+        }).join('') + '</div>';
+        var f = $('.mkids-peg[data-p="' + last + '"]', c.stage); if (f && c.dev.keyboard) f.focus();
+      }
+      while (pegs[2].length < nd && moves < cap) {
+        draw();
+        var p = +(await c.tap('.mkids-peg')).dataset.p; last = p;
+        if (sel < 0) { if (pegs[p].length) sel = p; }
+        else if (p === sel) sel = -1;
+        else {
+          var dk = pegs[sel][pegs[sel].length - 1], top = pegs[p][pegs[p].length - 1];
+          if (top && top < dk) { bad++; c.say('الكبيرة ما تقعدش فوق الصغيرة. جرّب عمود تاني.', 'oh'); }
+          else { pegs[sel].pop(); pegs[p].push(dk); moves++; c.sfx(moves); c.say('انقل البرج كله لعمود النجمة.'); }
+          sel = -1;
+        }
+      }
+      draw(); await c.wait(500);
+      return { solved: pegs[2].length === nd, moves: moves, bad: bad, min: min };
+    }
+    c.say('نجرّب الأول ببرج صغير.'); await c.wait(900);
+    await round(2); await c.cheer(true, 900);
+    var stair = new Stair(3, 2, 4), R = 3, x = c.res.x = { rounds: '' }, rs = [];
+    for (var t = 0; t < R && !c.late(); t++) {
+      c.dots(t, R); c.say('انقل البرج كله لعمود النجمة.');
+      var nd = stair.level, r = await round(nd);
+      c.res.n++; c.res.err += r.bad; if (r.solved && nd > c.res.lvl) c.res.lvl = nd;
+      rs.push(nd + ':' + (r.solved ? r.moves : 'x' + r.moves) + '/' + r.min); x.rounds = rs.join(' ');
+      stair.result(r.solved && r.moves <= 2 * r.min);
+      c.dots(t + 1, R); await c.cheer(r.solved, 1000);
+    }
+  };
+
   /*__VIEWS__*/
 })();
