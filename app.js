@@ -2043,7 +2043,7 @@ const AI = (() => {
 /* ===== Boot ===== */
 VIEWS.account = el => ACCT.renderPanel(el);
 /* Route-specific chunks: the stub loads the files (in order), then the chunk replaces VIEWS[name] with the real view. */
-const CHUNK_SRC = { clib: 'clib.js?v=e169db60df', build: 'build.js?v=4028b84456', exam: 'exam.js?v=d8a2666970', neuro: 'neuro.js?v=667f4ec7ba', know: 'know.js?v=793570cc4d' };
+const CHUNK_SRC = { clib: 'clib.js?v=e169db60df', build: 'build.js?v=7037cc24bf', exam: 'exam.js?v=d8a2666970', neuro: 'neuro.js?v=667f4ec7ba', know: 'know.js?v=8cd60460b2' };
 const needChunks = names => Promise.all(names.map(n => loadChunk(CHUNK_SRC[n])));
 const LAZY_VIEWS = { build: ['clib', 'build'], respond: ['clib', 'build'], qbuild: ['clib', 'build'], take: ['clib', 'build'], exam: ['exam'], bank: ['exam'], schedules: ['exam'], neuro: ['clib', 'build', 'neuro'], know: ['clib', 'know'] };
 Object.keys(LAZY_VIEWS).forEach(name => {

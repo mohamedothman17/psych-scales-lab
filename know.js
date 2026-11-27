@@ -68,7 +68,7 @@ var KNOW = (function () {
   function quality(q) { if (!q) return null; var bad = 0; if (q.fastPct > 50) bad += 3; else if (q.fastPct > 30) bad += 2; else if (q.fastPct > 15) bad++; if (q.ls >= 8) bad++; if (q.pairs && q.contra / q.pairs > 0.5) bad++; return bad >= 3 ? ['r', 'منخفضة'] : bad >= 1 ? ['y', 'متوسطة'] : ['g', 'عالية']; }
   // fixed published severity bands (no percentiles: the scores are skewed and there are no local norms)
   var BANDS = { phq: [[20, 'r', 'شديد'], [15, 'r', 'متوسط إلى شديد'], [10, 'y', 'متوسط'], [5, 'y', 'خفيف'], [0, 'g', 'ضئيل']], gad: [[15, 'r', 'شديد'], [10, 'y', 'متوسط'], [5, 'y', 'خفيف'], [0, 'g', 'ضئيل']] };
-  function band(x, k) { var b = BANDS[k]; for (var i = 0; i < b.length; i++) if (x >= b[i][0]) return b[i]; return b[b.length - 1]; }
+  function band(x, k) { var b = BANDS[k]; for (var i = 0; i < b.length; i++) if (x >= b[i][0]) return [b[i][1], b[i][2]]; return ['g', b[b.length - 1][2]]; }
   function spanBand(x) { return x > 9 ? ['g', 'أعلى من المدى المعتاد'] : x >= 5 ? ['g', 'ضمن المدى المعتاد'] : ['y', 'أقل من المدى المعتاد']; }
   var PHQN = ['قلة الاهتمام والمتعة', 'الإحباط واليأس', 'مشكلات النوم', 'التعب وقلة الطاقة', 'الشهية', 'لوم الذات', 'صعوبة التركيز', 'البطء أو التململ', 'أفكار إيذاء النفس'], GADN = ['التوتر والعصبية', 'صعوبة إيقاف القلق', 'القلق الزائد من أمور كثيرة', 'صعوبة الاسترخاء', 'التململ', 'سرعة الانزعاج', 'توقع حدوث شيء فظيع'];
   function topSym(arr, names) { if (!arr) return []; return arr.map(function (v, i) { return [names[i], v]; }).filter(function (x) { return x[1] >= 2; }).sort(function (a, b) { return b[1] - a[1]; }); }
