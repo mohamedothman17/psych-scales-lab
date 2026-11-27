@@ -50,6 +50,7 @@
     return '<label for="' + id + '">' + esc(label) + (hint ? '<span class="hint">' + esc(hint) + '</span>' : '') + '</label><select id="' + id + '" data-f="' + id + '"><option value="">اختار…</option>' + opts(list, cur) + '</select>';
   }
 
+  function fmtDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return '<bdi class="num" dir="ltr">' + (m ? m[3] + '/' + m[2] + '/' + m[1] : esc(iso)) + '</bdi>'; }
   function sr(t) { return '<span class="sr">' + t + '</span>'; }
   function plural(n, one, two, few, many) { return n === 1 ? one : n === 2 ? two : n >= 3 && n <= 10 ? n + ' ' + few : n + ' ' + many; }
 
@@ -148,16 +149,19 @@
       h += '<path class="' + (done[i] && done[i + 1] ? 'link-done' : (done[i] && i + 1 === nx) ? 'link-next' : 'link-todo') + '" d="M' + pts[i][0] + ' ' + pts[i][1] + 'L' + pts[i + 1][0] + ' ' + pts[i + 1][1] + '"/>';
     }
     STEPS.forEach(function (s, k) {
-      var x = pts[k][0], y = pts[k][1], num = mobile ? '' : '<text class="n" x="' + x + '" y="' + (y - (k === nx ? 50 : 22)) + '">' + pad2(k + 1) + '</text>';
-      if (k === nx) {
+      var x = pts[k][0], y = pts[k][1], isNext = k === nx;
+      var up = mobile ? k === 4 : (k === 0 || ys[k - 1] > y) && (k === 9 || ys[k + 1] > y) && k > 0;
+      function lab(dy) { return '<text class="t" x="' + x + '" y="' + (up ? y - dy + 12 : y + dy) + '">' + esc(s[1]) + '</text>'; }
+      var num = mobile ? '' : '<text class="n" x="' + x + '" y="' + (up ? y + (isNext ? 58 : 30) : y - (isNext ? 50 : 22)) + '">' + pad2(k + 1) + '</text>';
+      if (isNext) {
         var a = mobile ? [38, 26, 18, 11, 18, 44] : [58, 40, 27, 16, 26, 62];
         h += '<g class="st next"><circle cx="' + x + '" cy="' + y + '" r="' + a[0] + '" fill="url(#glow)"/><circle class="halo h3" cx="' + x + '" cy="' + y + '" r="' + a[1] + '"/><circle class="halo h2" cx="' + x + '" cy="' + y + '" r="' + a[2] + '"/><circle class="halo h1" cx="' + x + '" cy="' + y + '" r="' + a[3] + '"/>' +
-          '<use href="#star4" x="' + (x - a[4] / 2) + '" y="' + (y - a[4] / 2) + '" width="' + a[4] + '" height="' + a[4] + '"/>' + num + '<text class="t" x="' + x + '" y="' + (y + a[5]) + '">' + esc(s[1]) + '</text></g>';
+          '<use href="#star4" x="' + (x - a[4] / 2) + '" y="' + (y - a[4] / 2) + '" width="' + a[4] + '" height="' + a[4] + '"/>' + num + lab(a[5]) + '</g>';
       } else if (done[k]) {
         var z = mobile ? 15 : 19;
-        h += '<g class="st done"><circle cx="' + x + '" cy="' + y + '" r="' + z + '" fill="url(#glowS)"/><use href="#star4" x="' + (x - z / 2) + '" y="' + (y - z / 2) + '" width="' + z + '" height="' + z + '"/>' + num + '<text class="t" x="' + x + '" y="' + (y + (mobile ? 27 : 31)) + '">' + esc(s[1]) + '</text></g>';
+        h += '<g class="st done"><circle cx="' + x + '" cy="' + y + '" r="' + z + '" fill="url(#glowS)"/><use href="#star4" x="' + (x - z / 2) + '" y="' + (y - z / 2) + '" width="' + z + '" height="' + z + '"/>' + num + lab(mobile ? 27 : 31) + '</g>';
       } else {
-        h += '<g class="st todo"><circle cx="' + x + '" cy="' + y + '" r="' + (mobile ? 3.6 : 4.5) + '"/>' + num + '<text class="t" x="' + x + '" y="' + (y + (mobile ? 24 : 28)) + '">' + esc(s[1]) + '</text></g>';
+        h += '<g class="st todo"><circle cx="' + x + '" cy="' + y + '" r="' + (mobile ? 3.6 : 4.5) + '"/>' + num + lab(mobile ? 24 : 28) + '</g>';
       }
     });
     return h + '</svg>';
@@ -190,7 +194,7 @@
   var LEVELS = { 'مبتدئ': 1, 'متوسط': 2, 'متقدم': 3 };
   function rings(level) {
     var h = '<svg class="rings" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><circle class="rg-orbit" cx="48" cy="48" r="45"/>';
-    for (var k = 3; k >= 1; k--) h += '<circle class="rg' + (k <= level ? ' on' : '') + '" cx="48" cy="48" r="' + (k * 11 + 3) + '"/>';
+    for (var k = 3; k >= 1; k--) h += '<circle class="rg' + (k <= level ? ' on' : '') + '" cx="48" cy="48" r="' + (k * 13 + 2) + '"/>';
     return h + '</svg>';
   }
   var TOYS = '<svg class="toys" viewBox="0 0 200 220" aria-hidden="true" focusable="false"><rect class="toy-a" x="28" y="128" width="78" height="78" rx="14"/><circle class="toy-w" cx="54" cy="158" r="5"/><circle class="toy-w" cx="82" cy="158" r="5"/><path class="toy-smile" d="M54 176c8 9 20 9 28 0"/><path class="toy-b" d="M112 206a44 44 0 0 1 88 0z"/><path class="toy-c" d="M34 128 70 62l36 66z"/><circle class="toy-d" cx="150" cy="118" r="30"/><circle class="toy-e" cx="150" cy="118" r="12"/><rect class="toy-w" x="20" y="14" width="40" height="40" rx="10" transform="rotate(-14 40 34)"/></svg>';
@@ -231,7 +235,7 @@
     if (p) {
       var n = progress(p), nx = null;
       STEPS.some(function (s) { if (!stepDone(p, s[0])) { nx = s; return true; } return false; });
-      h += '<div class="sky-head"><div><p class="sky-kicker">آخر مشروع اشتغلت عليه · <span class="num">' + esc(p.updated || '') + '</span></p><h2 id="sky-t">' + esc(p.title || 'مشروع من غير عنوان') + '</h2></div>' +
+      h += '<div class="sky-head"><div><p class="sky-kicker">آخر مشروع اشتغلت عليه · ' + fmtDate(p.updated) + '</p><h2 id="sky-t">' + esc(p.title || 'مشروع من غير عنوان') + '</h2></div>' +
         '<p class="sky-count"><span class="big num">' + n + '</span><span class="of">من ' + STEPS.length + '</span><span class="lbl">أجزاء مكتملة</span></p></div>' +
         starChart(p, false) + starChart(p, true) +
         '<div class="sky-foot"><p class="sky-next">' + (nx ? '<span class="pill">الخطوة الجاية</span><strong>' + nx[1] + '</strong><span class="sky-hint">' + esc(stepHint(nx[0])) + '</span>' : '<span class="pill">اكتملت</span><span class="sky-hint">كل الأجزاء العشرة مكتوبة. راجعها مع مشرفك واطبع نسخة.</span>') + '</p>' +
@@ -243,16 +247,47 @@
     }
     return h + '</section>';
   }
+  /* A small schematic of the comparison the guide is recommending. Illustrative shape only, not data. */
+  function schema(p) {
+    var vs = (p.vars || []).filter(function (v) { return v.name; });
+    var d = vs.filter(function (v) { return v.role === 'dv'; })[0], x = vs.filter(function (v) { return v.role === 'iv'; })[0];
+    if (!d || !x) return '';
+    var h = '<svg class="schema" viewBox="0 0 220 84" aria-hidden="true" focusable="false">', r = seeded(5), i, k, y;
+    if (d.level === 'nominal') {
+      for (i = 0; i < 2; i++) for (k = 0; k < 2; k++) h += '<rect class="sc-cell c' + ((i + k) % 2) + '" x="' + (68 + k * 44) + '" y="' + (6 + i * 37) + '" width="40" height="33" rx="6"/>';
+    } else if (x.level === 'scale') {
+      h += '<path class="sc-line" d="M24 70 196 14"/>';
+      for (i = 0; i < 12; i++) { var cx = 30 + i * 14.5; h += '<circle class="sc-dot" cx="' + f1(cx) + '" cy="' + f1(68 - (cx - 24) * 0.325 + (r() - 0.5) * 22) + '" r="3.6"/>'; }
+    } else {
+      var g = Math.min(Math.max(parseInt(x.groups, 10) || 2, 2), 4), col = function (j) { return f1(220 - (j + 0.5) * 220 / g); };
+      if (p.paired === 'rel') {
+        for (i = 0; i < 4; i++) {
+          var ysub = [], pth = '';
+          for (k = 0; k < g; k++) { ysub.push(f1(16 + i * 17 - k * 5 + (r() - 0.5) * 8)); pth += (k ? 'L' : 'M') + col(k) + ' ' + ysub[k]; }
+          h += '<path class="sc-line" d="' + pth + '"/>';
+          for (k = 0; k < g; k++) h += '<circle class="sc-dot' + (k ? '' : ' open') + '" cx="' + col(k) + '" cy="' + ysub[k] + '" r="4.2"/>';
+        }
+      } else {
+        for (k = 0; k < g; k++) {
+          y = 54 - k * (28 / (g - 1));
+          h += '<path class="sc-line" d="M' + f1(+col(k) - 22) + ' ' + f1(y) + 'h44"/>';
+          for (i = 0; i < 6; i++) h += '<circle class="sc-dot" cx="' + f1(+col(k) - 17 + i * 6.8) + '" cy="' + f1(y + (r() - 0.5) * 30) + '" r="3.4"/>';
+        }
+      }
+    }
+    return h + '</svg>';
+  }
+  var READS = '<ul class="reads"><li><span class="num">01</span>دور كل متغير: مستقل ولا تابع</li><li><span class="num">02</span>مستوى القياس: اسمي، ترتيبي، كمّي</li><li><span class="num">03</span>عدد المجموعات، ومستقلة ولا مرتبطة</li></ul>';
   function guideTile(p) {
     var h = '<section class="tile guide"><div class="tile-head"><span class="tile-ic">' + ic('guide') + '</span><h2>مرشد الاختبار الإحصائي</h2></div>';
-    if (!p) return h + '<p class="muted">بيقرا متغيرات مشروعك ومستوى قياسها، ويقترح الاختبار المناسب ويقولك ليه. أول ما تبدأ مشروع هيشتغل.</p></section>';
+    if (!p) return h + '<p class="muted">بيقرا متغيرات مشروعك ومستوى قياسها، ويقترح الاختبار المناسب ويقولك ليه. أول ما تبدأ مشروع هيشتغل.</p><p class="guide-sub">بيقرا 3 حاجات</p>' + READS + '</section>';
     var r = recommend(p);
-    if (!r) h += '<p class="guide-ask">ناقص متغير مستقل ومتغير تابع</p><p class="muted">اكتبهم في جزء المتغيرات، وهنقترح الاختبار المناسب.</p><p class="tile-end"><a class="btn" href="#project/' + p.id + '/variables">اكتب المتغيرات</a></p>';
-    else if (r.need) h += '<p class="guide-ask">' + esc(r.need) + '</p><p class="tile-end"><a class="btn" href="#project/' + p.id + '/' + (r.need.indexOf('التصميم') > -1 ? 'design' : 'variables') + '">كمّل الناقص</a></p>';
+    if (!r) h += '<p class="guide-ask">ناقص متغير مستقل ومتغير تابع</p><p class="muted">اكتبهم في جزء المتغيرات، وهنقترح الاختبار المناسب.</p><p class="guide-sub">بيقرا 3 حاجات</p>' + READS + '<p class="tile-end"><a class="btn" href="#project/' + p.id + '/variables">اكتب المتغيرات</a></p>';
+    else if (r.need) h += '<p class="guide-ask">' + esc(r.need) + '</p><p class="guide-sub">بيقرا 3 حاجات</p>' + READS + '<p class="tile-end"><a class="btn" href="#project/' + p.id + '/' + (r.need.indexOf('التصميم') > -1 ? 'design' : 'variables') + '">كمّل الناقص</a></p>';
     else if (!r.recs.length) h += '<p class="muted">مفيش اقتراح جاهز للتركيبة دي من المتغيرات. راجع مستوى القياس في جزء المتغيرات.</p><p class="tile-end"><a class="btn" href="#project/' + p.id + '/variables">افتح المتغيرات</a></p>';
     else {
       var x = r.recs[0];
-      h += '<p class="guide-test">' + esc(x.test) + '</p><p class="guide-why">' + esc(x.why) + '</p><p class="guide-sub">افحص قبل ما تحلل</p><ul class="checks">' + x.check.slice(0, 2).map(function (c) { return '<li>' + ic('clock') + '<span>' + esc(c) + '</span></li>'; }).join('') + '</ul>' +
+      h += '<p class="guide-test">' + esc(x.test) + '</p><p class="guide-why">' + esc(x.why) + '</p>' + schema(p) + (x.alt ? '<p class="guide-alt"><span>لو الافتراضات مش متحققة</span>' + esc(x.alt) + '</p>' : '') + '<p class="guide-sub">افحص قبل ما تحلل</p><ul class="checks">' + x.check.slice(0, 2).map(function (c) { return '<li>' + ic('clock') + '<span>' + esc(c) + '</span></li>'; }).join('') + '</ul>' +
         '<p class="tile-end"><a class="btn" href="#project/' + p.id + '/analysis">افتح المرشد</a><span class="tag">حسب متغيراتك</span></p>';
     }
     return h + '</section>';
@@ -269,7 +304,7 @@
     var k = S.kids[0], more = S.kids.length - 1, title = r === 'specialist' ? 'الأطفال اللي بتابعهم' : 'أولادي';
     return '<section class="tile kid' + (k ? '' : ' empty') + '"><div class="kid-txt"><h2 class="kid-label">' + title + '</h2>' +
       (k ? '<p class="kid-name">' + esc(k.child) + '</p><p class="kid-grade">' + esc(k.grade) + (more > 0 ? ' · و' + plural(more, 'طفل كمان', 'طفلين كمان', 'أطفال كمان', 'طفل كمان') : '') + '</p><p class="kid-soon">الأنشطة قريباً</p><a class="btn onkid" href="#family">افتح المتابعة</a>'
-        : '<p class="kid-name small-name">سجّل طفلك</p><p class="kid-grade">من أولى لسادسة ابتدائي، بموافقة ولي الأمر.</p><p class="kid-soon">الأنشطة قريباً</p><a class="btn onkid" href="#family">سجّل طفلك</a>') +
+        : '<p class="kid-name small-name">سجّل طفلك</p><p class="kid-grade">من أولى لسادسة ابتدائي، بموافقة ولي الأمر.</p><p class="kid-soon">الأنشطة قريباً</p><a class="btn onkid" href="#family">ابدأ التسجيل</a>') +
       '</div>' + TOYS + '</section>';
   }
   function labsTile() {
@@ -381,7 +416,7 @@
       var n = progress(p), nx = null;
       STEPS.some(function (s) { if (!stepDone(p, s[0])) { nx = s; return true; } return false; });
       return '<a class="pcard" href="#project/' + p.id + '"><span class="pcard-ros">' + rosette(p, false) + '</span><span class="pcard-body"><h2>' + esc(p.title || 'مشروع من غير عنوان') + '</h2><span class="pcard-meta num">' + n + ' من ' + STEPS.length + ' أجزاء مكتملة</span>' +
-        '<span class="pcard-sub">' + (nx ? 'الجاي: ' + nx[1] : 'كل الأجزاء مكتملة') + ' · آخر تعديل <span class="num">' + esc(p.updated || '') + '</span></span></span></a>';
+        '<span class="pcard-sub">' + (nx ? 'الجاي: ' + nx[1] : 'كل الأجزاء مكتملة') + ' · آخر تعديل ' + fmtDate(p.updated) + '</span></span></a>';
     }).join('') + '</div>';
     main.innerHTML = h;
     $('#newP').addEventListener('click', newProject);
@@ -392,13 +427,18 @@
     if (!p) { main.innerHTML = '<div class="card empty"><p class="empty-t">المشروع ده مش موجود على الجهاز ده.</p><p><a class="btn" href="#projects">رجوع للمشاريع</a></p></div>'; return; }
     step = step || 'overview';
     var h = '<p class="crumb"><a href="#projects">' + ic('back') + 'كل المشاريع</a></p>' +
-      '<div class="ptitle"><label for="ptitle">عنوان المشروع</label><input type="text" id="ptitle" value="' + esc(p.title) + '" placeholder="اكتب عنوان مبدئي"></div>' +
+      '<div class="ptitle"><label for="ptitle">عنوان المشروع</label><textarea id="ptitle" rows="1" placeholder="اكتب عنوان مبدئي">' + esc(p.title) + '</textarea></div>' +
       '<div class="steps" role="tablist" aria-label="أجزاء المشروع"><button type="button" role="tab" data-step="overview" class="ov" aria-selected="' + (step === 'overview') + '"><span class="dot">' + ic('projects') + '</span><span class="lbl">نظرة عامة</span></button>' +
       STEPS.map(function (s, i) { var ok = stepDone(p, s[0]); return '<button type="button" role="tab" data-step="' + s[0] + '" class="' + (ok ? 'done' : '') + '" aria-selected="' + (step === s[0]) + '"><span class="dot num">' + (ok ? ic('check') : i + 1) + '</span><span class="lbl">' + s[1] + '</span>' + (ok ? sr('مكتمل') : '') + '</button>'; }).join('') + '</div><div id="pane"></div>';
     main.innerHTML = h;
     var strip = $('.steps', main), cur = $('[aria-selected="true"]', strip);
     if (cur) strip.scrollLeft = cur.offsetLeft - (strip.clientWidth - cur.offsetWidth) / 2;
-    $('#ptitle').addEventListener('change', function () { p.title = this.value.trim(); touch(p); });
+    var ti = $('#ptitle');
+    function fit() { ti.style.height = 'auto'; ti.style.height = ti.scrollHeight + 'px'; }
+    fit();
+    ti.addEventListener('input', fit);
+    ti.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ti.blur(); } });
+    ti.addEventListener('change', function () { p.title = this.value.replace(/\s+/g, ' ').trim(); this.value = p.title; fit(); touch(p); });
     $$('[data-step]', main).forEach(function (b) { b.addEventListener('click', function () { location.hash = '#project/' + p.id + '/' + b.getAttribute('data-step'); }); });
     var pane = $('#pane');
     if (step === 'overview') overview(p, pane);
@@ -413,7 +453,7 @@
   function overview(p, pane) {
     var n = progress(p);
     pane.innerHTML = '<div class="card over"><div class="over-ros">' + rosette(p, true) + '</div><div class="over-body"><h2>إيه الناقص في مشروعك؟</h2><p class="muted small num">' + n + ' من ' + STEPS.length + ' أجزاء مكتملة</p><ul class="todo">' +
-      STEPS.map(function (s, i) { var ok = stepDone(p, s[0]); return '<li><a href="#project/' + p.id + '/' + s[0] + '"><span class="mk ' + (ok ? 'ok' : 'no') + ' num" aria-hidden="true">' + (ok ? ic('check') : i + 1) + '</span><span>' + s[1] + '</span>' + (ok ? '' : '<span class="muted small">(ناقص)</span>') + '</a></li>'; }).join('') + '</ul></div></div>' +
+      STEPS.map(function (s, i) { var ok = stepDone(p, s[0]); return '<li><a href="#project/' + p.id + '/' + s[0] + '"><span class="mk ' + (ok ? 'ok' : 'no') + ' num" aria-hidden="true">' + (ok ? ic('check') : i + 1) + '</span><span>' + s[1] + '</span>' + (ok ? '' : '<span class="muted small miss">(ناقص)</span>') + '</a></li>'; }).join('') + '</ul></div></div>' +
       advise(p) +
       '<div class="card tools" id="ptools"><h2>أدوات</h2><div class="row"><a class="btn" href="' + LABS.stats + '">' + ic('stats') + 'افتح معمل الإحصاء</a><a class="btn" href="' + LABS.scales + '">' + ic('measure') + 'افتح معمل القياس</a><button class="btn" type="button" id="pPrint">' + ic('print') + 'اطبع / PDF</button><button class="btn" type="button" id="pExport">' + ic('download') + 'نزّل نسخة (JSON)</button><button class="btn danger" type="button" id="pDel">' + ic('trash') + 'امسح المشروع</button></div></div>';
     $('#pPrint').addEventListener('click', function () { printable(p); });
@@ -507,13 +547,13 @@
     if (!r) return '<div class="advice warn">' + head + '<p>اكتب متغير مستقل ومتغير تابع على الأقل في جزء <a href="#project/' + p.id + '/variables">المتغيرات</a>، وهنقترح الاختبار المناسب.</p></div>';
     if (r.need) return '<div class="advice warn">' + head + '<p>' + esc(r.need) + '</p></div>';
     return '<div class="advice">' + head + r.recs.map(function (x) {
-      return '<div class="rec"><p class="rec-test"><strong>' + esc(x.test) + '</strong></p><p class="small">ليه: ' + esc(x.why) + '</p>' + (x.alt ? '<p class="small">لو الافتراضات مش متحققة: ' + esc(x.alt) + '</p>' : '') + '<p class="small rec-sub">افحص قبل ما تحلل:</p><ul class="small checks">' + x.check.map(function (c) { return '<li>' + ic('clock') + '<span>' + esc(c) + '</span></li>'; }).join('') + '</ul></div>';
+      return '<div class="rec"><div class="rec-main"><p class="rec-test"><strong>' + esc(x.test) + '</strong></p><p class="small">ليه: ' + esc(x.why) + '</p>' + (x.alt ? '<p class="small">لو الافتراضات مش متحققة: ' + esc(x.alt) + '</p>' : '') + '</div><div class="rec-checks"><p class="small rec-sub">افحص قبل ما تحلل:</p><ul class="small checks">' + x.check.map(function (c) { return '<li>' + ic('clock') + '<span>' + esc(c) + '</span></li>'; }).join('') + '</ul></div></div>';
     }).join('') + r.extra.map(function (e) { return '<p class="small extra">' + esc(e) + '</p>'; }).join('') +
       '<p class="small muted advice-note">الاقتراح ده مبني على أول متغير تابع وأول متغير مستقل ومستوى قياسهم زي ما كتبتهم. راجعه مع مشرفك، واكتب حجم الأثر وفترة الثقة مع أي نتيجة.</p><p><a class="btn" href="' + LABS.stats + '">' + ic('stats') + 'نفّذه في معمل الإحصاء</a></p></div>';
   }
 
   function printable(p) {
-    var h = '<h1>' + esc(p.title || 'مشروع بحثي') + '</h1><p class="muted small">آخر تعديل ' + esc(p.updated) + '</p>';
+    var h = '<h1>' + esc(p.title || 'مشروع بحثي') + '</h1><p class="muted small">آخر تعديل ' + fmtDate(p.updated) + '</p>';
     h += '<div class="card"><h2>التصميم</h2><p>' + esc(p.design || '—') + '</p><p>' + esc((p.d || {}).dnote || '') + '</p></div>';
     h += '<div class="card"><h2>المتغيرات</h2><ul>' + (p.vars || []).map(function (v) { return '<li>' + esc(v.name) + ' — ' + esc(label(ROLE_V, v.role)) + '، ' + esc(label(LEVEL_V, v.level)) + (v.tool ? '، بيتقاس بـ' + esc(v.tool) : '') + '</li>'; }).join('') + '</ul></div>';
     STEPS.forEach(function (s) { if (!TEXT[s[0]]) return; h += '<div class="card"><h2>' + s[1] + '</h2>' + TEXT[s[0]].map(function (f) { return '<h3>' + esc(f[1]) + '</h3><p>' + esc((p.d || {})[f[0]] || '—').replace(/\n/g, '<br>') + '</p>'; }).join('') + '</div>'; });
@@ -527,7 +567,7 @@
   V.family = function () {
     var h = '<header class="head"><h1>' + (S.role === 'specialist' ? 'الأطفال اللي بتابعهم' : 'أولادي') + '</h1></header>';
     if (S.kids.length) h += '<div class="kids">' + S.kids.map(function (k) {
-      return '<div class="kid-card"><span class="kid-av" aria-hidden="true">' + esc(String(k.child || '').trim().charAt(0)) + '</span><div><h2>' + esc(k.child) + '</h2><p class="kid-meta"><span class="num">' + esc(k.age) + '</span> سنين · ' + esc(k.grade) + '</p><p class="small kid-consent">موافقة ولي الأمر: ' + esc(k.guardian) + ' · <span class="num">' + esc(k.date) + '</span></p><span class="tag soon-tag">الأنشطة قريباً</span></div></div>';
+      return '<div class="kid-card"><span class="kid-av" aria-hidden="true">' + esc(String(k.child || '').trim().charAt(0)) + '</span><div><h2>' + esc(k.child) + '</h2><p class="kid-meta"><span class="num">' + esc(k.age) + '</span> سنين · ' + esc(k.grade) + '</p><p class="small kid-consent">موافقة ولي الأمر: ' + esc(k.guardian) + ' · ' + fmtDate(k.date) + '</p><span class="tag soon-tag">الأنشطة قريباً</span></div></div>';
     }).join('') + '</div>';
     h += '<div class="sec"><h2>تسجيل طفل</h2></div><form class="card form" id="kf" novalidate>' +
       '<p class="notice">الأنشطة هنا للتنمية والمتابعة. مش اختبار ذكاء ولا تشخيص، ونتايجها مينفعش يتبني عليها قرار مصيري عن الطفل.</p><div class="two">' +
