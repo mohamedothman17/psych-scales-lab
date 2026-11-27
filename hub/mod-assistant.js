@@ -353,8 +353,11 @@
       if (waiting) waiting = null;
       if (e && e.name === 'AbortError') return say({ r: 'a', t: (buf.trim() ? buf.trim() + '\n\n' : '') + 'وقّفت الرد زي ما طلبت.', src: 'model' });
       var code = e && e.code || 'unknown';
-      if (code === 'network' && Date.now() - blockedAt < 4000) code = 'blocked';
-      say({ r: 'a', t: (C.errors[code] || C.errors.unknown) + '\n\nهجاوبك دلوقتي من الوضع بدون اتصال:', err: code, src: 'error' }, function () { offline(text); });
+      /* the browser reports a policy block just after the request fails, so look for it a moment later */
+      return new Promise(function (res) { window.setTimeout(res, code === 'network' ? 80 : 0); }).then(function () {
+        if (code === 'network' && Date.now() - blockedAt < 4000) code = 'blocked';
+        say({ r: 'a', t: (C.errors[code] || C.errors.unknown) + '\n\nهجاوبك دلوقتي من الوضع بدون اتصال:', err: code, src: 'error' }, function () { offline(text); });
+      });
     }).then(function () { abort = null; setBusy(false); status(''); });
   }
 

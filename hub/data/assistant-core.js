@@ -331,29 +331,28 @@
     }
   });
 
+  /* The theories library ships as script files that fill window.HubTheories.list. They are requested only when
+     that section is live on this copy, so a copy without it never asks for a missing file. */
   var theoriesCache = null;
   function loadTheories() {
     if (theoriesCache) return Promise.resolve(theoriesCache);
-    var g = window.HubTheories || window.HubTheoriesData;
-    if (g) return Promise.resolve(theoriesCache = g);
-    /* Only ask the network when the theories section is live on this copy, so a missing file is not requested. */
+    function got() { var g = window.HubTheories; return g && Array.isArray(g.list) && g.list.length ? (theoriesCache = g.list) : null; }
+    if (got()) return Promise.resolve(theoriesCache);
     if (!document.querySelector('a[href="#theories"]')) return Promise.resolve(null);
-    return fetch('data/theories.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { return theoriesCache = j; }).catch(function () { return null; });
+    return ['data/theories.js', 'data/theories-2.js'].reduce(function (chain, src) {
+      return chain.then(function () { return new Promise(function (res) { var sc = document.createElement('script'); sc.src = src; sc.onload = sc.onerror = function () { res(); }; document.head.appendChild(sc); }); });
+    }, Promise.resolve()).then(got);
   }
-  function flatTheories(j) {
-    var out = [];
-    (function walk(x, depth) {
-      if (!x || depth > 4) return;
-      if (Array.isArray(x)) { x.forEach(function (y) { walk(y, depth + 1); }); return; }
-      if (typeof x !== 'object') return;
-      var name = x.title || x.name || x.ar || x.name_ar || x.title_ar || x.t;
-      if (typeof name === 'string' && name.length < 140) {
-        var text = Object.keys(x).map(function (k) { return typeof x[k] === 'string' ? x[k] : Array.isArray(x[k]) && typeof x[k][0] === 'string' ? x[k].join(' ') : ''; }).join(' ');
-        out.push({ id: x.id || x.slug || '', name: name, sum: x.summary || x.sum || x.brief || x.say || x.core || '', text: text });
-      }
-      Object.keys(x).forEach(function (k) { if (typeof x[k] === 'object') walk(x[k], depth + 1); });
-    })(j, 0);
-    return out;
+  function words(x, depth) {
+    if (typeof x === 'string') return x;
+    if (!x || typeof x !== 'object' || depth > 3) return '';
+    return (Array.isArray(x) ? x : Object.keys(x).filter(function (k) { return k !== 'refs' && k !== 'id'; }).map(function (k) { return x[k]; })).map(function (y) { return words(y, depth + 1); }).join(' ');
+  }
+  function flatTheories(list) {
+    return list.filter(function (x) { return x && typeof x === 'object'; }).map(function (x) {
+      var ti = x.title && typeof x.title === 'object' ? x.title : { ar: x.title || x.name || '' };
+      return { id: typeof x.id === 'string' ? x.id : '', name: String(ti.ar || ti.en || ''), en: String(ti.en || ''), sum: typeof x.core === 'string' ? x.core : typeof x.summary === 'string' ? x.summary : '', who: words(x.theorists, 0), text: words(x, 0) };
+    }).filter(function (t) { return t.name; });
   }
   tool({
     name: 'search_theories', mutates: false, async: true,
@@ -363,12 +362,12 @@
       return loadTheories().then(function (j) {
         if (!j) return { ok: false, say: 'مكتبة النظريات لسه مش متاحة على النسخة دي، فمش هقدر أبحث فيها. ومش هخمّن محتوى نظرية من عندي.', data: { error: 'not_available' } };
         var qt = tokens(a.query), list = flatTheories(j).map(function (t) {
-          var nt = tokens(t.name), all = tokens(t.text), s = 0;
+          var nt = tokens(t.name + ' ' + t.en + ' ' + t.who), all = tokens(t.text), s = 0;
           qt.forEach(function (q) { if (nt.indexOf(q) > -1) s += 3; else if (all.indexOf(q) > -1) s += 1; });
           return { t: t, s: s };
         }).filter(function (x) { return x.s > 0; }).sort(function (x, y) { return y.s - x.s; }).slice(0, 3);
         if (!list.length) return { ok: false, say: 'ملقتش في مكتبة النظريات حاجة قريبة من «' + clip(a.query, 60) + '».', link: { label: 'افتح مكتبة النظريات', hash: '#theories' }, data: { results: [] } };
-        return { ok: true, say: 'لقيت في مكتبة النظريات:\n' + list.map(function (x) { return '- **' + x.t.name + '**' + (x.t.sum ? ': ' + clip(x.t.sum, 160) : ''); }).join('\n'), link: { label: 'افتح مكتبة النظريات', hash: list[0].t.id ? '#theories/' + list[0].t.id : '#theories' }, data: { results: list.map(function (x) { return { name: x.t.name, summary: clip(x.t.sum, 300) }; }) } };
+        return { ok: true, say: 'لقيت في مكتبة النظريات:\n' + list.map(function (x) { return '- **' + x.t.name + '**' + (x.t.sum ? ': ' + clip(x.t.sum, 160) : ''); }).join('\n'), link: { label: 'افتح مكتبة النظريات', hash: list[0].t.id ? '#theories/t/' + encodeURIComponent(list[0].t.id) : '#theories' }, data: { results: list.map(function (x) { return { name: x.t.name, summary: clip(x.t.sum, 300) }; }) } };
       });
     }
   });
@@ -591,6 +590,7 @@
       return { text: 'أنا مش بألّف مراجع ولا بكتب دراسات من الذاكرة، علشان ميطلعش مرجع مش موجود. اللي ينفع: تدوّر في مستكشف الأدبيات وهو بيجيب أبحاث حقيقية بروابطها.', links: [v ? { label: 'دوّر عن «' + clip(v, 40) + '»', hash: '#explore/search/' + encodeURIComponent(clip(v, 120)) } : { label: 'مستكشف الأدبيات', hash: '#explore' }], src: 'unknown' };
     }
     if (m && /(نظريات|النظريات)/.test(n)) return { call: { tool: 'search_theories', args: { query: afterWord(raw, 'عن') || raw } } };
+    if (/^(نظريه|اشرح نظريه|ايه هي نظريه|يعني ايه نظريه) .{2,}/.test(n)) return { call: { tool: 'search_theories', args: { query: raw } } };
 
     if (has(n, RE.size) && !/(عاملي|تحليل عاملي)/.test(n) && !/^(يعني ايه|ايه هو|ما هو)/.test(n)) {
       var sa = {}; v = SLOTS.stest.read(raw, n); if (v) sa.test = v;
