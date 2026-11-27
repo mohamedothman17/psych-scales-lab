@@ -50,7 +50,7 @@
   --status:#5fd4c4; --status-wash:rgba(95,212,196,.12); --status-fill:#3fb8a8;
   --warn-wash:rgba(242,200,121,.09); --bad:#ff9e8f;
   --ros-core:#0e0b1f; --ros-core-ink:#efebfa;
-  --sky-a:#1b1542; --sky-b:#100c26; --sky-edge:rgba(190,180,255,.2); --sky-grid:rgba(190,180,255,.08);
+  --sky-a:#271f66; --sky-b:#141038; --sky-edge:rgba(190,180,255,.2); --sky-grid:rgba(190,180,255,.08);
   --sky-ink:#efebfa; --sky-ink-2:#b9b3d4; --sky-ink-3:#9a93bd;
   --gold:#f2c879; --gold-hi:#f8dda4;
   --shadow:0 1px 0 rgba(255,255,255,.05) inset,0 24px 48px -28px rgba(0,0,0,.8);
@@ -379,6 +379,18 @@ textarea{min-height:120px;resize:vertical;line-height:1.8}
 .advice .extra{margin-top:12px;padding:10px 14px;border-radius:var(--r-s);background:var(--brand-wash)}
 .advice-note{margin:16px 0 14px;padding-top:14px;border-top:1px solid var(--line);max-width:75ch}
 .vars+.advice,.form+.advice{margin-top:20px}
+/* the guide is the sunflower block everywhere it appears */
+.advice{background:var(--sun);color:var(--block-ink);border:0;border-radius:28px 28px 28px 8px;box-shadow:none}
+.advice::before{display:none}
+.advice h3,.advice .muted,.advice .rec-sub{color:var(--block-ink)}
+.advice h3{font-weight:600}
+.advice .tile-ic{background:var(--block-ink);color:var(--sun);display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:12px}
+.advice .checks .ic{color:var(--block-ink)}
+.advice .rec-checks,.advice .rec+.rec,.advice .advice-note{border-color:rgba(30,20,64,.3)}
+.advice a:not(.btn){color:var(--block-ink);font-weight:600}
+.advice .btn{background:var(--block-ink);border-color:var(--block-ink);color:#fff}
+.advice .extra{background:rgba(30,20,64,.1)}
+.advice :focus-visible{outline-color:var(--block-ink);outline-width:3px}
 
 /* variables table */
 .tablewrap{position:relative;overflow-x:auto;margin:12px -8px 0;padding:0 8px 6px;scrollbar-width:thin}
@@ -409,7 +421,7 @@ tr.none td{padding:20px 6px}
 .choice:nth-child(3){margin-top:-10px}
 .choice:nth-child(4){border-radius:8px 30px 30px 30px;margin-top:24px}
 .choice::after{content:"";position:absolute;inset:0;z-index:-1;background-image:var(--grain);background-size:180px;opacity:.28;pointer-events:none}
-.c-night{background:linear-gradient(180deg,var(--sky-a),var(--sky-b));color:#f4f6ff}
+.c-night{background:linear-gradient(180deg,#2b3aa3,#141c5e);color:#f4f6ff}
 .c-night::after{background-image:var(--grain-light);opacity:.35}
 .c-violet{background:var(--violet);color:#fff} .c-sun{background:var(--sun)} .c-mint{background:var(--mint)}
 .choice-art{display:block;width:min(150px,60%);margin-bottom:auto;transition:transform .6s cubic-bezier(.16,1,.3,1)}
@@ -449,7 +461,7 @@ tr.none td{padding:20px 6px}
 .s1-brand{display:block;font-family:var(--mark);font-weight:700;font-size:clamp(7.5rem,35vw,34rem);line-height:1.3;margin:-.12em -.03em -.3em 0;color:var(--em);white-space:nowrap}
 .s1-line{display:inline-block}
 .s1-line+.s1-line{color:var(--block-ink);background:var(--sun);padding:0 .14em;border-radius:.12em}
-.s1-lead{font-size:clamp(1.05rem,.9rem + .6vw,1.4rem);max-width:34ch;margin:22px 0 0;color:var(--ink-2)}
+.s1-lead{font-size:clamp(1.1rem,.9rem + .9vw,1.7rem);line-height:1.6;max-width:32ch;margin:22px 0 0;color:var(--ink-2)}
 .s1-cue{display:flex;align-items:center;gap:12px;margin:5svh 0 0;font-size:.9rem;color:var(--ink-2)}
 .s1-cue i{display:block;width:1px;height:54px;background:currentColor;transform-origin:top}
 
@@ -483,7 +495,7 @@ tr.none td{padding:20px 6px}
 .m-ring.a{fill:var(--violet)} .m-ring.b{fill:var(--coral)} .m-ring.c{fill:var(--sun)} .m-ring.d{fill:var(--mint)}
 
 .s5{padding-block:14svh 12svh}
-.s5-title{font-size:clamp(3.4rem,1.4rem + 9vw,10rem);font-weight:800;line-height:1.12}
+.s5-title{font-size:clamp(3.4rem,1.4rem + 9vw,10rem);font-weight:800;line-height:1.4;margin-top:-.2em}
 .s5-lead{font-size:1.1rem;color:var(--ink-2);max-width:44ch;margin:10px 0 40px}
 
 /* ---------- motion ---------- */
@@ -667,5 +679,6 @@ tr.none td{padding:20px 6px}
   .page{margin:0;padding:0;min-height:0}
   main{padding:0;max-width:none}
   .card,.advice{box-shadow:none;break-inside:avoid;margin-top:12px}
+  .advice{background:#fff;border:1px solid var(--line-2)}
   .printout h1{margin-bottom:4px}
 }

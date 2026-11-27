@@ -97,10 +97,10 @@
       var ease = 'expo.out';
       /* scene 1: the headline arrives word by word, then drifts away with the scroll */
       var words = [];
-      try { $$('.s1-line', root).forEach(function (l) { words = words.concat(Split.create(l, { type: 'words', mask: 'words', wordsClass: 'w' }).words); }); } catch (e) { words = $$('.s1-line', root); }
+      try { $$('.s1-line', root).forEach(function (l) { words = words.concat(Split.create(l, { type: 'words', wordsClass: 'w' }).words); }); } catch (e) { words = $$('.s1-line', root); }
       gsap.timeline({ defaults: { ease: ease } })
         .from('.s1-brand', { yPercent: 28, opacity: 0, scale: 0.92, duration: 1.4 }, 0.1)
-        .from(words, { yPercent: 115, duration: 1.1, stagger: 0.09 }, 0.45)
+        .from(words, { yPercent: 70, opacity: 0, rotation: 4, duration: 1.1, stagger: 0.1 }, 0.45)
         .from('.s1-lead', { y: 24, opacity: 0, duration: 0.9 }, 0.95)
         .from('.s1-cue', { opacity: 0, duration: 0.8 }, 1.5);
       gsap.to('.s1-title', { yPercent: -18, scale: 1.08, opacity: 0, ease: 'none', scrollTrigger: { trigger: '.s1', start: 'top top', end: 'bottom 25%', scrub: true } });
