@@ -318,7 +318,7 @@
       return;
     }
     var r = ses.res, pages = Math.min(MAX_PAGE, Math.ceil(r.count / PER)), isSaved = D().saved.some(function (s) { return s.q === r.q && s.fs === r.fs; });
-    var h = '<header class="mexplore-rhead"><h2 id="mx-count" tabindex="-1"><span class="num mexplore-big">' + nfmt(r.count) + '</span> ' + (r.count === 1 ? 'نتيجة' : 'نتيجة') + ' في الفهرس عن <bdi dir="auto">«' + esc(r.q) + '»</bdi></h2>' +
+    var h = '<header class="mexplore-rhead"><h2 id="mx-count" tabindex="-1"><span class="num mexplore-big">' + nfmt(r.count) + '</span> ' + "نتيجة" + ' في الفهرس عن <bdi dir="auto">«' + esc(r.q) + '»</bdi></h2>' +
       (r.count ? '<button class="btn" type="button" data-act="savesearch"' + (isSaved ? ' disabled' : '') + '>' + (isSaved ? H.ic('check') + 'البحث ده محفوظ للرادار' : H.ic('plus') + 'احفظ البحث للرادار') + '</button>' : '') + '</header>';
     if (!r.count) {
       h += '<div class="mexplore-none"><p class="mexplore-none-t">الفهرس مرجّعش حاجة بالكلمات دي.</p><p>ده معناه إن <strong>الفهرس</strong> مفيهوش تطابق، مش إن الموضوع محدّش درسه. ' +
@@ -476,3 +476,345 @@
       }
     });
   }
+
+  /* ---------- topic feasibility worksheet: the user rates, the page only adds up ---------- */
+  var CRIT = [
+    ['imp', 'الأهمية', 'الموضوع بيحل مشكلة حقيقية أو بيضيف لمعرفة محتاجينها؟', 'أهمية ضعيفة', 'أهمية واضحة ومبرَّرة'],
+    ['nov', 'دليل الجِدّة', 'دوّرت بنفسك ولقيت إن زاويتك مش متغطّية؟ قيّم قوة الدليل، مش إحساسك.', 'لسه مدوّرتش', 'راجعت بشكل منظم'],
+    ['feas', 'إمكانية التنفيذ', 'تقدر تنفّذه فعلاً بالإمكانيات والتصاريح المتاحة؟', 'صعب جداً', 'في إيدك'],
+    ['data', 'الوصول للبيانات', 'العينة أو البيانات تقدر توصل لها؟', 'مفيش طريق واضح', 'الوصول مضمون'],
+    ['meth', 'ملاءمة المنهج', 'في منهج وأدوات مناسبة تجاوب على السؤال؟', 'مش واضح', 'المنهج والأدوات جاهزين'],
+    ['skill', 'ملاءمة مهاراتك', 'مهاراتك في القياس والإحصاء تكفي، أو تقدر تتعلم الناقص في وقتك؟', 'فجوة كبيرة', 'مهاراتي تكفي'],
+    ['cost', 'التكلفة والوقت', 'في حدود وقتك وميزانيتك؟', 'فوق طاقتي', 'في الحدود'],
+    ['eth', 'المخاطر الأخلاقية', 'المخاطر على المشاركين قليلة وتقدر تتحكم فيها؟', 'مخاطر عالية', 'مخاطر قليلة ومتحكَّم فيها']
+  ];
+  function ideaSum(it) { var t = 0, n = 0; CRIT.forEach(function (c) { var v = +it.s[c[0]]; if (v >= 1 && v <= 5) { t += v; n++; } }); return { total: t, rated: n }; }
+  function ideaStar(it) {
+    var R = 78, pts = [], h = '<svg class="mexplore-star" viewBox="-110 -104 220 208" role="img" aria-label="رسم لتقييماتك في المعايير الثمانية">';
+    for (var ring = 1; ring <= 5; ring++) h += '<circle class="mexplore-ring" r="' + (R * ring / 5) + '"/>';
+    CRIT.forEach(function (c, i) {
+      var a = (-90 + i * 45) * Math.PI / 180, v = +it.s[c[0]] || 0, x = Math.cos(a), y = Math.sin(a);
+      h += '<line class="mexplore-spoke" x2="' + (x * R).toFixed(1) + '" y2="' + (y * R).toFixed(1) + '"/>';
+      h += '<text class="mexplore-slabel" x="' + (x * (R + 15)).toFixed(1) + '" y="' + (y * (R + 13) + 4).toFixed(1) + '" text-anchor="middle">' + (i + 1) + '</text>';
+      pts.push((x * R * v / 5).toFixed(1) + ',' + (y * R * v / 5).toFixed(1));
+      if (v) h += '<circle class="mexplore-pt" cx="' + (x * R * v / 5).toFixed(1) + '" cy="' + (y * R * v / 5).toFixed(1) + '" r="3.4"/>';
+    });
+    return h + '<polygon class="mexplore-poly" points="' + pts.join(' ') + '"/></svg>';
+  }
+  function ideaView(main, id) {
+    var d = D(), it = d.ideas.filter(function (x) { return x.id === id; })[0] || d.ideas[0];
+    var lead = 'إنت اللي بتقيّم فكرتك على 8 معايير واضحة وبتكتب مبرراتك. المنصة بتجمع الأرقام وتعرضها بس، ومبتحكمش على الفكرة.';
+    var make = '<form id="mx-newidea" class="mexplore-newidea"><label for="mx-ititle">اكتب فكرة أو عنوان مبدئي</label><div class="mexplore-qrow"><input type="text" id="mx-ititle" maxlength="200" dir="auto"><button class="btn' + (it ? '' : ' primary') + '" type="submit">' + H.ic('plus') + 'ورقة جديدة</button></div></form>';
+    var body;
+    if (!it) body = '<div class="mexplore-empty"><p class="mexplore-none-t">مفيش أفكار لسه</p><p>اكتب فكرتك وابدأ قيّمها معيار معيار.</p></div>' + make;
+    else {
+      var s = ideaSum(it);
+      body = (d.ideas.length > 1 ? '<div class="mexplore-ideapick"><label for="mx-ipick">أفكارك</label><select id="mx-ipick">' + d.ideas.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === it.id ? ' selected' : '') + '>' + esc(x.title) + '</option>'; }).join('') + '</select></div>' : '') +
+        '<div class="mexplore-ideagrid"><div class="mexplore-crits"><h2 class="mexplore-ideatitle" dir="auto">' + esc(it.title) + '</h2>' + CRIT.map(function (c, i) {
+          var v = +it.s[c[0]] || 0;
+          return '<fieldset class="mexplore-crit" data-k="' + c[0] + '"><legend><span class="num mexplore-cno">' + (i + 1) + '</span>' + c[1] + '</legend><p class="mexplore-cq">' + c[2] + '</p>' +
+            '<div class="mexplore-scale"><span class="small">' + c[3] + '</span><div class="mexplore-dots">' + [1, 2, 3, 4, 5].map(function (n) {
+              return '<label><input type="radio" name="mx-s-' + c[0] + '" value="' + n + '"' + (v === n ? ' checked' : '') + '><span class="num">' + n + '</span><span class="sr"> من 5</span></label>';
+            }).join('') + '</div><span class="small">' + c[4] + '</span></div>' +
+            '<label for="mx-n-' + c[0] + '" class="mexplore-nlabel">مبررك</label><textarea id="mx-n-' + c[0] + '" data-n="' + c[0] + '" maxlength="600" dir="auto" rows="2">' + esc(it.n[c[0]] || '') + '</textarea></fieldset>';
+        }).join('') + '</div>' +
+        '<aside class="mexplore-total tile block lilac"><p class="block-label">مجموع تقييمك إنت</p><p class="mexplore-sum"><strong class="num" id="mx-sum">' + s.total + '</strong><span> من 40</span></p><p id="mx-rated">قيّمت <span class="num">' + s.rated + '</span> من 8 معايير</p>' +
+          '<div id="mx-star">' + ideaStar(it) + '</div>' +
+          '<p class="small">المجموع = جمع الأرقام اللي اخترتها، من غير أوزان ولا تعديل. مفيش حد فاصل بيقول «كويسة» أو «وحشة»: معيار واحد ضعيف (زي الأخلاقيات أو الوصول للبيانات) ممكن يوقف الفكرة حتى لو المجموع عالي.</p>' +
+          '<p class="small"><strong>الجِدّة عمرها ما بتبقى مضمونة.</strong> ممكن يكون في بحث منشور بلغة تانية أو في مصدر مش مفهرس. ناقش الورقة دي مع مشرفك.</p>' +
+          '<p><button class="btn danger" type="button" id="mx-idel">' + H.ic('trash') + 'امسح الورقة دي</button></p></aside></div>' + make;
+    }
+    main.innerHTML = shell('idea', 'ورقة <em>جدوى</em> الموضوع', lead, body);
+    $('#mx-newidea').addEventListener('submit', function (e) {
+      e.preventDefault(); var t = str($('#mx-ititle').value); if (!t) { $('#mx-ititle').focus(); return; }
+      if (d.ideas.length >= 20) { H.toast('عندك 20 ورقة. امسح واحدة الأول.'); return; }
+      var n = { id: H.uid(), title: t.slice(0, 200), s: {}, n: {}, at: tday() }; d.ideas.unshift(n); H.save(); ideaView(main, n.id);
+    });
+    if (!it) return;
+    var pick = $('#mx-ipick'); if (pick) pick.addEventListener('change', function () { ideaView(main, pick.value); });
+    $('.mexplore-crits').addEventListener('change', function (e) {
+      var t = e.target;
+      if (t.type === 'radio') { it.s[t.closest('[data-k]').getAttribute('data-k')] = +t.value; }
+      else if (t.hasAttribute('data-n')) it.n[t.getAttribute('data-n')] = t.value.trim().slice(0, 600);
+      else return;
+      H.save(); var s2 = ideaSum(it);
+      $('#mx-sum').textContent = s2.total; $('#mx-rated').innerHTML = 'قيّمت <span class="num">' + s2.rated + '</span> من 8 معايير'; $('#mx-star').innerHTML = ideaStar(it);
+    });
+    $('#mx-idel').addEventListener('click', function () { if (confirm('تمسح ورقة «' + it.title + '» بتقييماتها؟')) { d.ideas = d.ideas.filter(function (x) { return x !== it; }); H.data('explore').ideas = d.ideas; H.save(); ideaView(main); H.toast('اتمسحت'); } });
+  }
+
+  /* ---------- opportunities: only what a person verified recently ---------- */
+  var OTYPES = [['scholarship', 'منحة دراسية'], ['grant', 'تمويل بحثي'], ['fellowship', 'زمالة'], ['conference', 'مؤتمر'], ['cfp', 'دعوة لتقديم أوراق']];
+  var OKEYS = ['id', 'title', 'organiser', 'type', 'url', 'deadline', 'eligibility', 'funding', 'location', 'added', 'verified', 'verifier', 'notes'];
+  function httpsUrl(u) { try { var x = new URL(String(u)); return x.protocol === 'https:' && x.hostname.indexOf('.') > 0; } catch (e) { return false; } }
+  function anyUrl(u) { try { var x = new URL(String(u)); return x.protocol === 'https:' || x.protocol === 'http:'; } catch (e) { return false; } }
+  function validOpp(o) {
+    return !!o && typeof o === 'object' && !!str(o.id) && !!str(o.title) && !!str(o.organiser) && OTYPES.some(function (t) { return t[0] === o.type; }) &&
+      httpsUrl(o.url) && isIso(o.deadline) && isIso(o.verified) && !!str(o.verifier);
+  }
+  function cleanOpp(o) { var c = {}; OKEYS.forEach(function (k) { c[k] = typeof o[k] === 'string' ? o[k].trim() : ''; }); return c; }
+  /* shown = deadline today or later, verified not in the future, and verified at most 30 days ago */
+  function fresh(o, t) { return o.verified <= t && days(o.verified, t) <= FRESH_DAYS; }
+  function shown(o, t) { return o.deadline >= t && fresh(o, t); }
+  var board = null, boardWait = null;
+  function loadBoard(done, force) {
+    if (board && !force) return done(board);
+    if (boardWait) { boardWait.push(done); return; }
+    boardWait = [done];
+    function end(b) { board = b; var q = boardWait; boardWait = null; q.forEach(function (f) { f(b); }); }
+    fetch('data/opportunities.json', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+      if (!Array.isArray(j)) throw 0;
+      var ok = j.filter(validOpp).map(cleanOpp), seen = {};
+      ok = ok.filter(function (o) { if (seen[o.id]) return false; seen[o.id] = 1; return true; });
+      end({ ok: true, all: ok, bad: j.length - ok.length });
+    }).catch(function () { end({ ok: false, all: [], bad: 0 }); });
+  }
+  var LEVEL_WORDS = { 'ليسانس/بكالوريوس': ['بكالوريوس', 'ليسانس', 'undergraduate', 'bachelor'], 'دبلوم': ['دبلوم', 'diploma'], 'ماجستير': ['ماجستير', 'master', 'msc', 'postgraduate', 'graduate student', 'دراسات عليا'],
+    'دكتوراه': ['دكتوراه', 'phd', 'doctoral', 'doctorate', 'postgraduate', 'graduate student', 'دراسات عليا'], 'بعد الدكتوراه': ['بعد الدكتوراه', 'postdoc', 'post-doc', 'early career', 'early-career'], 'ممارس من غير دراسة حالية': ['ممارس', 'practitioner', 'professional'] };
+  var STAGE_TYPES = { 'لسه بدوّر على موضوع': ['scholarship', 'fellowship', 'grant'], 'عندي موضوع وبكتب الخطة': ['scholarship', 'fellowship', 'grant'], 'بجمع بيانات': ['grant', 'conference'], 'بحلّل': ['grant', 'conference'], 'بكتب': ['conference', 'cfp'], 'خلّصت وبنشر': ['conference', 'cfp'] };
+  function match(o, pf) {
+    var out = [], el = (o.eligibility || '').toLowerCase(), hay = (o.title + ' ' + o.eligibility + ' ' + o.notes).toLowerCase();
+    var lw = LEVEL_WORDS[pf.level];
+    if (lw && el && lw.some(function (w) { return el.indexOf(w) > -1; })) out.push('شروط التقديم مذكور فيها مرحلتك (' + pf.level + ')');
+    var fw = String(pf.field || '').toLowerCase().split(/[\s،,]+/).filter(function (w) { return w.length >= 3 && w !== 'علم'; });
+    var hit = fw.filter(function (w) { return hay.indexOf(w) > -1; })[0];
+    if (hit) out.push('كلمة «' + hit + '» من تخصصك موجودة في الوصف');
+    var st = STAGE_TYPES[pf.stage];
+    if (st && st.indexOf(o.type) > -1) out.push('النوع ده بيناسب مرحلتك في البحث (' + pf.stage + ')');
+    return out;
+  }
+  function oppCard(o, t, extra) {
+    var left = days(t, o.deadline), m = extra && extra.match;
+    return '<li class="mexplore-opp t-' + esc(o.type) + '"><div class="mexplore-left"><strong class="num">' + (left <= 0 ? '0' : left) + '</strong><span>' + (left <= 0 ? 'آخر يوم النهارده' : left === 1 ? 'يوم فاضل' : left === 2 ? 'يومين فاضلين' : left <= 10 ? 'أيام فاضلة' : 'يوم فاضل') + '</span></div>' +
+      '<div class="mexplore-obody"><p class="mexplore-otype">' + esc(label(OTYPES, o.type)) + (o.location ? ' <span aria-hidden="true">·</span> ' + esc(o.location) : '') + '</p><h3 dir="auto">' + esc(o.title) + '</h3><p class="mexplore-meta" dir="auto">' + esc(o.organiser) + '</p>' +
+      '<dl class="mexplore-ofacts"><div><dt>آخر ميعاد</dt><dd>' + fdate(o.deadline) + '</dd></div>' + (o.eligibility ? '<div><dt>مين يقدّم</dt><dd dir="auto">' + esc(o.eligibility) + '</dd></div>' : '') + (o.funding ? '<div><dt>التمويل</dt><dd dir="auto">' + esc(o.funding) + '</dd></div>' : '') + (o.notes ? '<div><dt>ملاحظة</dt><dd dir="auto">' + esc(o.notes) + '</dd></div>' : '') + '</dl>' +
+      (m && m.length ? '<ul class="mexplore-why">' + m.map(function (x) { return '<li>' + H.ic('check') + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
+      '<p class="mexplore-ofoot"><a class="btn" href="' + esc(o.url) + '" target="_blank" rel="noopener noreferrer">' + ic('out') + 'الصفحة الرسمية<span class="sr"> (تفتح في صفحة جديدة)</span></a><span class="mexplore-ver">' + H.ic('check') + 'اتراجعت يوم ' + fdate(o.verified) + ' · ' + esc(o.verifier) + '</span></p>' +
+      '<p class="small muted">اتأكد من الميعاد والشروط من الصفحة الرسمية قبل ما تقدّم.</p></div></li>';
+  }
+  var bf = { type: '', me: false };
+  function emptyArt() {
+    return '<svg class="mexplore-boardart" viewBox="0 0 320 150" aria-hidden="true"><path class="l" d="M36 104 96 52l62 40 58-58 68 50"/>' +
+      [[36, 104], [96, 52], [158, 92], [216, 34], [284, 84]].map(function (p) { return '<use class="s" href="#star4" x="' + (p[0] - 11) + '" y="' + (p[1] - 11) + '" width="22" height="22"/>'; }).join('') + '</svg>';
+  }
+  function rulesBox(pf) {
+    return '<details class="mexplore-rules"><summary>«مناسبة لي» بتتحسب إزاي؟</summary><p>3 قواعد بسيطة بتقارن ملفك بنص الفرصة. الفرصة بتظهر لو قاعدة واحدة على الأقل اتحققت، وبنكتب لك على كل كارت أنهي قاعدة.</p><ol>' +
+      '<li><strong>المرحلة:</strong> مرحلتك الدراسية (' + esc(pf.level || 'مش محددة في ملفك') + ') أو مرادفها الإنجليزي مكتوبة في «مين يقدّم».</li>' +
+      '<li><strong>التخصص:</strong> أي كلمة من تخصصك (' + esc(pf.field || 'مش محدد في ملفك') + ') موجودة في العنوان أو الشروط أو الملاحظة.</li>' +
+      '<li><strong>مرحلة البحث:</strong> بتدوّر أو بتكتب الخطة ← منح دراسية وزمالات وتمويل. بتجمع بيانات أو بتحلّل ← تمويل ومؤتمرات. بتكتب أو بتنشر ← مؤتمرات ودعوات أوراق. (مرحلتك: ' + esc(pf.stage || 'مش محددة في ملفك') + ')</li></ol>' +
+      '<p class="small muted">دي مطابقة كلمات، مش حكم على أهليتك. الشروط الرسمية هي المرجع. <a href="#profile">عدّل ملفك</a></p></details>';
+  }
+  function boardView(main) {
+    main.innerHTML = shell('board', 'فرص <em>متراجعة</em> بتاريخها', 'منح وزمالات ومؤتمرات ودعوات أوراق. مفيش حاجة بتظهر هنا إلا لو حد فتح صفحتها الرسمية وراجعها في آخر 30 يوم، وميعادها لسه مفتوح.', '<div id="mx-board" aria-live="polite"><p role="status">بنحمّل اللوحة…</p></div><div id="mx-mine"></div>' +
+      '<p class="mexplore-ownerlink small"><a href="#explore/manage">لصاحب المنصة: إدارة اللوحة</a></p>');
+    drawMine(main);
+    loadBoard(function (b) { if ($('#mx-board')) drawBoard(b); }, true);
+  }
+  function drawBoard(b) {
+    var box = $('#mx-board'), t = tday(), pf = H.state().profile || {};
+    var live = b.all.filter(function (o) { return shown(o, t); }).sort(function (x, y) { return x.deadline < y.deadline ? -1 : 1; });
+    var stale = b.all.filter(function (o) { return o.deadline >= t && !fresh(o, t); }).length;
+    if (!b.ok) { box.innerHTML = '<div class="mexplore-err" role="alert"><strong>اللوحة متحمّلتش</strong><p>مقدرناش نقرا ملف الفرص. مش هنعرض حاجة مش متأكدين منها. جرّب تحدّث الصفحة.</p></div>'; return; }
+    if (!live.length) {
+      box.innerHTML = '<section class="mexplore-boardempty"><div class="mexplore-be-art">' + emptyArt() + '</div><div><h2>اللوحة فاضية دلوقتي، وده مقصود</h2>' +
+        '<p>اللوحة دي بتتجمّع بالإيد. لحد النهارده <strong>مفيش ولا فرصة اتراجعت واتضافت</strong>' + (stale ? ' (في <span class="num">' + stale + '</span> ' + (stale === 1 ? 'فرصة مستخبية' : 'فرص مستخبية') + ' لأن مراجعتها عدّى عليها أكتر من 30 يوم)' : '') + '، فمفيش حاجة نعرضها. مش هنملاها بفرص من الذاكرة أو من مواقع تجميع، لأن ميعاد غلط ممكن يضيّع عليك تقديم.</p>' +
+        '<h3>الفرص بتتضاف إزاي؟</h3><ol class="mexplore-steps"><li>صاحب المنصة بيفتح الصفحة الرسمية للجهة بنفسه ويتأكد من الميعاد والشروط.</li><li>بيسجّلها بتاريخ المراجعة واسم اللي راجع.</li><li>بتظهر هنا طول ما ميعادها مفتوح ومراجعتها مكمّلتش 30 يوم. بعد كده بتختفي لوحدها لحد ما تتراجع تاني.</li></ol>' +
+        '<p>لحد ما ده يحصل، سجّل الفرص اللي بتلاقيها بنفسك في قايمتك تحت.</p></div></section>';
+      return;
+    }
+    var rows = live.map(function (o) { return { o: o, m: match(o, pf) }; });
+    var vis = rows.filter(function (r) { return (!bf.type || r.o.type === bf.type) && (!bf.me || r.m.length); });
+    if (bf.me) vis.sort(function (x, y) { return y.m.length - x.m.length; });
+    var present = OTYPES.filter(function (ty) { return live.some(function (o) { return o.type === ty[0]; }); });
+    box.innerHTML = '<div class="mexplore-bfilters" role="group" aria-label="فلترة الفرص"><button class="chipbtn" type="button" data-ty="" aria-pressed="' + (!bf.type) + '">الكل <span class="num">' + live.length + '</span></button>' +
+      present.map(function (ty) { return '<button class="chipbtn" type="button" data-ty="' + ty[0] + '" aria-pressed="' + (bf.type === ty[0]) + '">' + ty[1] + '</button>'; }).join('') +
+      '<button class="chipbtn mexplore-me" type="button" data-me aria-pressed="' + bf.me + '">' + H.ic('profile') + 'مناسبة لي</button></div>' + rulesBox(pf) +
+      (stale ? '<p class="small muted"><span class="num">' + stale + '</span> ' + (stale === 1 ? 'فرصة مستخبية' : 'فرص مستخبية') + ' لأن مراجعتها عدّى عليها أكتر من 30 يوم.</p>' : '') +
+      (vis.length ? '<ul class="mexplore-opps">' + vis.map(function (r) { return oppCard(r.o, t, { match: bf.me ? r.m : null }); }).join('') + '</ul>'
+        : '<p class="mexplore-none-t">مفيش فرص بالفلتر ده.</p>' + (bf.me ? '<p>مفيش قاعدة من التلاتة اتحققت مع ملفك. ده مش معناه إنك مش مؤهل: شوف «الكل» واقرا الشروط الرسمية.</p>' : ''));
+    $('.mexplore-bfilters', box).addEventListener('click', function (e) {
+      var c = e.target.closest('button'); if (!c) return;
+      if (c.hasAttribute('data-me')) bf.me = !bf.me; else bf.type = c.getAttribute('data-ty');
+      drawBoard(b);
+    });
+  }
+  /* the user's own private finds: never mixed with the verified board */
+  function drawMine(main) {
+    var box = $('#mx-mine'); if (!box) return;
+    var d = D(), t = tday();
+    box.innerHTML = '<section class="mexplore-mine"><header><h2>فرص سجّلتها بنفسك</h2><p class="mexplore-minetag">أضفتها أنا، مش متراجعة من المنصة</p><p class="small muted">قايمة خاصة على جهازك ده بس. المنصة مراجعتش أي حاجة فيها، ومحدش غيرك شايفها.</p></header>' +
+      (d.mine.length ? '<ul class="mexplore-minelist">' + d.mine.map(function (o, i) {
+        var late = o.deadline && o.deadline < t;
+        return '<li data-i="' + i + '"><div><h3 dir="auto">' + esc(o.title) + '</h3><p class="mexplore-meta">' + esc(label(OTYPES, o.type)) + (o.deadline ? ' <span aria-hidden="true">·</span> ' + (late ? '<span class="mexplore-late">الميعاد فات يوم ' + fdate(o.deadline) + '</span>' : 'آخر ميعاد ' + fdate(o.deadline) + ' (فاضل <span class="num">' + days(t, o.deadline) + '</span> يوم)') : ' <span aria-hidden="true">·</span> من غير ميعاد مسجّل') + '</p>' +
+          (o.notes ? '<p class="small" dir="auto">' + esc(o.notes) + '</p>' : '') + (o.url ? '<p><a href="' + esc(o.url) + '" target="_blank" rel="noopener noreferrer">الرابط اللي سجّلته</a></p>' : '') + '</div><button class="btn icon" type="button" data-del aria-label="امسح «' + esc(o.title) + '»">' + H.ic('trash') + '</button></li>';
+      }).join('') + '</ul>' : '<p class="muted">لسه مسجّلتش حاجة.</p>') +
+      '<details class="mexplore-addmine"><summary>' + H.ic('plus') + 'سجّل فرصة لقيتها</summary><form id="mx-mineform" novalidate><label for="mx-mt">اسم الفرصة</label><input type="text" id="mx-mt" maxlength="200" dir="auto">' +
+      '<div class="mexplore-fgrid"><div><label for="mx-mty">النوع</label><select id="mx-mty">' + H.opts(OTYPES, 'scholarship') + '</select></div><div><label for="mx-md">آخر ميعاد (اختياري)</label><input type="date" id="mx-md" class="mexplore-in"></div></div>' +
+      '<label for="mx-mu">الرابط (اختياري)</label><input type="text" id="mx-mu" class="mexplore-ltr" dir="ltr" inputmode="url" maxlength="500" placeholder="https://">' +
+      '<label for="mx-mn">ملاحظاتك</label><textarea id="mx-mn" maxlength="500" dir="auto" rows="2"></textarea><p class="mexplore-fielderr" id="mx-merr" role="alert" hidden></p><p><button class="btn" type="submit">احفظ في قايمتي</button></p></form></details></section>';
+    $('#mx-mineform').addEventListener('submit', function (e) {
+      e.preventDefault(); var er = $('#mx-merr'), title = str($('#mx-mt').value), u = $('#mx-mu').value.trim(), dl = $('#mx-md').value;
+      var msg = !title ? 'اكتب اسم الفرصة.' : u && !anyUrl(u) ? 'الرابط لازم يبدأ بـ https:// أو http://' : dl && !isIso(dl) ? 'التاريخ مش مظبوط.' : d.mine.length >= 50 ? 'عندك 50 فرصة. امسح القديم الأول.' : '';
+      if (msg) { er.textContent = msg; er.hidden = false; return; }
+      d.mine.unshift({ id: H.uid(), title: title, type: $('#mx-mty').value, deadline: dl, url: u, notes: str($('#mx-mn').value), added: t }); H.save(); drawMine(main); H.toast('اتحفظ');
+    });
+    box.querySelector('.mexplore-mine').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-del]'); if (!b) return;
+      if (confirm('تمسح الفرصة دي من قايمتك؟')) { d.mine.splice(+b.closest('[data-i]').getAttribute('data-i'), 1); H.save(); drawMine(main); }
+    });
+  }
+
+  /* ---------- owner tool: validate, keep a local working copy, export the file ---------- */
+  var editId = '';
+  function manageView(main) {
+    main.innerHTML = shell('board', 'إدارة <em>لوحة الفرص</em>', 'الأداة دي لصاحب المنصة. اللي بتعمله هنا بيفضل على جهازك لحد ما تنزّل الملف وترفعه مكان hub/data/opportunities.json.', '<div id="mx-manage"><p role="status">بنحمّل الملف المنشور…</p></div>');
+    loadBoard(function (b) { if ($('#mx-manage')) drawManage(main, b); }, true);
+  }
+  function drawManage(main, b) {
+    var d = D(), t = tday(), box = $('#mx-manage');
+    if (!Array.isArray(d.drafts)) { d.drafts = b.all.map(cleanOpp); H.save(); }
+    var W = d.drafts, ed = W.filter(function (o) { return o.id === editId; })[0] || null;
+    var soon = W.filter(function (o) { return o.deadline >= t && (!fresh(o, t) || FRESH_DAYS - days(o.verified, t) <= 7); });
+    var past = W.filter(function (o) { return o.deadline < t; });
+    function v(k) { return ed ? esc(ed[k]) : ''; }
+    box.innerHTML = '<p class="notice">قبل أي إضافة: افتح الصفحة الرسمية للجهة بنفسك، واتأكد من الميعاد والشروط. متضيفش حاجة من الذاكرة أو من موقع تجميع. اللوحة بتخبّي لوحدها أي فرصة مراجعتها أقدم من 30 يوم.</p>' +
+      '<div class="mexplore-mgrid"><form id="mx-of" class="card mexplore-oform" novalidate><h2>' + (ed ? 'تعديل فرصة' : 'فرصة جديدة') + '</h2>' +
+      '<label for="mo-title">اسم الفرصة</label><input type="text" id="mo-title" maxlength="200" dir="auto" value="' + v('title') + '">' +
+      '<label for="mo-organiser">الجهة المنظمة</label><input type="text" id="mo-organiser" maxlength="200" dir="auto" value="' + v('organiser') + '">' +
+      '<div class="mexplore-fgrid"><div><label for="mo-type">النوع</label><select id="mo-type">' + H.opts(OTYPES, ed ? ed.type : 'scholarship') + '</select></div>' +
+      '<div><label for="mo-deadline">آخر ميعاد للتقديم</label><input type="date" id="mo-deadline" class="mexplore-in" value="' + v('deadline') + '"></div></div>' +
+      '<label for="mo-url">الرابط الرسمي<span class="hint">لازم https ومن موقع الجهة نفسها</span></label><input type="text" id="mo-url" class="mexplore-ltr" dir="ltr" inputmode="url" maxlength="500" placeholder="https://" value="' + v('url') + '">' +
+      '<label for="mo-eligibility">مين يقدّم<span class="hint">المرحلة والتخصص والجنسية زي ما الجهة كاتباها</span></label><textarea id="mo-eligibility" maxlength="500" dir="auto" rows="2">' + v('eligibility') + '</textarea>' +
+      '<div class="mexplore-fgrid"><div><label for="mo-funding">التمويل</label><input type="text" id="mo-funding" maxlength="300" dir="auto" value="' + v('funding') + '"></div><div><label for="mo-location">المكان</label><input type="text" id="mo-location" maxlength="120" dir="auto" value="' + v('location') + '"></div></div>' +
+      '<label for="mo-notes">ملاحظات</label><textarea id="mo-notes" maxlength="500" dir="auto" rows="2">' + v('notes') + '</textarea>' +
+      '<label for="mo-verifier">اسم اللي راجع</label><input type="text" id="mo-verifier" maxlength="80" dir="auto" value="' + esc(ed ? ed.verifier : d.verifier || '') + '">' +
+      '<p class="mexplore-vday">تاريخ المراجعة هيتسجّل: ' + fdate(t) + ' (النهارده)</p>' +
+      '<label class="mexplore-check"><input type="checkbox" id="mo-ok"><span>فتحت الصفحة الرسمية بنفسي النهارده واتأكدت من الميعاد والشروط</span></label>' +
+      '<ul class="mexplore-fielderr" id="mo-err" role="alert" hidden></ul>' +
+      '<p class="row"><button class="btn primary" type="submit">' + (ed ? 'احفظ التعديل' : 'أضِف للمسودة') + '</button>' + (ed ? '<button class="btn" type="button" id="mo-cancel">إلغاء</button>' : '') + '</p></form>' +
+      '<div class="mexplore-mside"><section class="tile block mint"><p class="block-label">المسودة على جهازك</p><p class="mexplore-sum"><strong class="num" id="mx-dcount">' + W.length + '</strong><span> ' + (W.length === 1 ? 'فرصة' : 'فرصة') + '</span></p><p>الملف المنشور دلوقتي فيه <span class="num">' + b.all.length + '</span>' + (b.bad ? '، و<span class="num">' + b.bad + '</span> عنصر مرفوض لأنه ناقص أو غلط' : '') + '.</p>' +
+      '<p class="row"><button class="btn inked" type="button" id="mx-export">' + H.ic('download') + 'نزّل opportunities.json</button></p><p class="small">بعد التنزيل: ارفع الملف مكان <bdi dir="ltr">hub/data/opportunities.json</bdi> في المستودع. الفرص اللي ميعادها فات بتتشال من الملف المُصدَّر.</p>' +
+      '<p><button class="btn ghost" type="button" id="mx-reset">ابدأ من الملف المنشور</button></p></section>' +
+      '<section class="mexplore-soon"><h2>محتاجة مراجعة قريب</h2>' + (soon.length ? '<ul>' + soon.map(function (o) {
+        var age = days(o.verified, t), leftV = FRESH_DAYS - age;
+        return '<li><strong dir="auto">' + esc(o.title) + '</strong><span class="small">' + (leftV < 0 ? 'مستخبية من اللوحة: مراجعتها من <span class="num">' + age + '</span> يوم' : 'هتختفي بعد <span class="num">' + leftV + '</span> يوم لو متراجعتش') + '</span></li>';
+      }).join('') + '</ul>' : '<p class="muted">مفيش حاجة هتختفي في السبع أيام الجاية.</p>') + (past.length ? '<p class="small"><span class="num">' + past.length + '</span> ميعادها فات وهتتشال عند التصدير.</p>' : '') + '</section></div></div>' +
+      '<section class="mexplore-dlist"><h2>كل عناصر المسودة</h2>' + (W.length ? '<ul>' + W.slice().sort(function (x, y) { return x.deadline < y.deadline ? -1 : 1; }).map(function (o) {
+        var st = o.deadline < t ? ['late', 'الميعاد فات'] : !fresh(o, t) ? ['stale', 'مستخبية: محتاجة مراجعة'] : ['live', 'ظاهرة على اللوحة بعد النشر'];
+        return '<li data-id="' + esc(o.id) + '"><div><h3 dir="auto">' + esc(o.title) + '</h3><p class="mexplore-meta">' + esc(label(OTYPES, o.type)) + ' <span aria-hidden="true">·</span> آخر ميعاد ' + fdate(o.deadline) + ' <span aria-hidden="true">·</span> اتراجعت يوم ' + fdate(o.verified) + '</p><p class="mexplore-st ' + st[0] + '">' + st[1] + '</p></div>' +
+          '<div class="row"><a class="btn ghost" href="' + esc(o.url) + '" target="_blank" rel="noopener noreferrer">' + ic('out') + 'افتح الرسمي</a><button class="btn" type="button" data-act="bump"' + (o.deadline < t || o.verified === t ? ' disabled' : '') + '>' + H.ic('check') + (o.verified === t ? 'اتراجعت النهارده' : 'راجِع تاني') + '</button><button class="btn ghost" type="button" data-act="edit">عدّل</button><button class="btn icon" type="button" data-act="del" aria-label="امسح «' + esc(o.title) + '»">' + H.ic('trash') + '</button></div></li>';
+      }).join('') + '</ul>' : '<p class="muted">المسودة فاضية، زي الملف المنشور.</p>') + '</section>';
+    function redraw() { drawManage(main, b); }
+    $('#mx-of').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var o = ed ? cleanOpp(ed) : { id: 'op-' + H.uid(), added: t }, errs = [];
+      ['title', 'organiser', 'type', 'deadline', 'url', 'eligibility', 'funding', 'location', 'notes', 'verifier'].forEach(function (k) { o[k] = k === 'type' || k === 'deadline' ? $('#mo-' + k).value : str($('#mo-' + k).value); });
+      o.url = $('#mo-url').value.trim();
+      if (!o.title) errs.push('اكتب اسم الفرصة.');
+      if (!o.organiser) errs.push('اكتب الجهة المنظمة.');
+      if (!httpsUrl(o.url)) errs.push('الرابط الرسمي لازم يبدأ بـ https:// ويكون عنوان كامل.');
+      if (!isIso(o.deadline)) errs.push('اختار آخر ميعاد للتقديم.'); else if (o.deadline <= t) errs.push('آخر ميعاد لازم يكون في المستقبل.');
+      if (!o.verifier) errs.push('اكتب اسم اللي راجع.');
+      if (!$('#mo-ok').checked) errs.push('أكّد إنك فتحت الصفحة الرسمية النهارده.');
+      var er = $('#mo-err');
+      if (errs.length) { er.innerHTML = errs.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join(''); er.hidden = false; return; }
+      o.verified = t; d.verifier = o.verifier; o = cleanOpp(o);
+      if (ed) W[W.indexOf(ed)] = o; else W.push(o);
+      editId = ''; H.save(); redraw(); H.toast(ed ? 'اتعدّلت في المسودة' : 'اتضافت للمسودة');
+    });
+    var cn = $('#mo-cancel'); if (cn) cn.addEventListener('click', function () { editId = ''; redraw(); });
+    $('#mx-export').addEventListener('click', function () {
+      var out = W.filter(function (o) { return validOpp(o) && o.deadline >= t; }).map(cleanOpp);
+      download('opportunities.json', JSON.stringify(out, null, 2) + '\n', 'application/json');
+      H.toast('اتنزّل الملف وفيه ' + out.length + ' فرصة');
+    });
+    $('#mx-reset').addEventListener('click', function () { if (confirm('تمسح مسودتك وتبدأ من الملف المنشور (' + b.all.length + ' عنصر)؟')) { d.drafts = b.all.map(cleanOpp); editId = ''; H.save(); redraw(); } });
+    $('.mexplore-dlist').addEventListener('click', function (e) {
+      var bt = e.target.closest('[data-act]'); if (!bt) return;
+      var id = bt.closest('[data-id]').getAttribute('data-id'), o = W.filter(function (x) { return x.id === id; })[0], act = bt.getAttribute('data-act'); if (!o) return;
+      if (act === 'bump') {
+        var who = d.verifier || o.verifier;
+        if (confirm('فتحت الصفحة الرسمية لـ «' + o.title + '» دلوقتي، والميعاد (' + o.deadline + ') والشروط لسه زي ما هي؟\n\nلو آه، هنسجّل المراجعة بتاريخ النهارده باسم ' + who + '.')) { o.verified = t; o.verifier = who; H.save(); redraw(); H.toast('اتسجّلت المراجعة'); }
+      } else if (act === 'edit') { editId = id; redraw(); $('#mo-title').focus(); }
+      else if (act === 'del') { if (confirm('تمسح «' + o.title + '» من المسودة؟')) { W.splice(W.indexOf(o), 1); if (editId === id) editId = ''; H.save(); redraw(); } }
+    });
+  }
+
+  /* ---------- weekly radar: real differences only ---------- */
+  var radarBusy = false, radarDiff = null;
+  function boardDiff(b, t) {
+    var d = D(), now = {}, prev = d.seen && d.seen.items, out = { first: !prev, from: d.seen && d.seen.at, add: [], gone: 0, re: [] };
+    b.all.filter(function (o) { return shown(o, t); }).forEach(function (o) { now[o.id] = o.verified; if (prev) { if (!prev[o.id]) out.add.push(o); else if (prev[o.id] !== o.verified) out.re.push(o); } });
+    if (prev) Object.keys(prev).forEach(function (id) { if (!now[id]) out.gone++; });
+    if (b.ok) { d.seen = { at: t, items: now }; H.save(); }
+    return out;
+  }
+  function radarView(main) {
+    main.innerHTML = shell('radar', 'رادار <em>الأسبوع</em>', 'إيه اللي اتغيّر من آخر مرة في أبحاثك المحفوظة وفي لوحة الفرص. بنقارن لقطة قديمة بلقطة جديدة، ولو مفيش فرق بنقول مفيش.', '<div id="mx-radar"></div><div id="mx-rboard" aria-live="polite"><p role="status">بنقارن اللوحة…</p></div>');
+    drawRadar(main);
+    loadBoard(function (b) {
+      var box = $('#mx-rboard'); if (!box) return;
+      var t = tday(); if (!radarDiff || radarDiff.day !== t) { radarDiff = boardDiff(b, t); radarDiff.day = t; radarDiff.ok = b.ok; }
+      var x = radarDiff, h = '<section class="mexplore-rb"><h2>لوحة الفرص</h2>';
+      if (!x.ok) h += '<p>مقدرناش نقرا ملف الفرص، فمفيش مقارنة.</p>';
+      else if (x.first) h += '<p>دي أول زيارة للرادار، فمفيش لقطة قديمة نقارن بيها. من الزيارة الجاية هتشوف الفرق.</p>';
+      else if (!x.add.length && !x.re.length && !x.gone) h += '<p>مفيش أي تغيير في اللوحة من آخر زيارة يوم ' + fdate(x.from) + '.</p>';
+      else h += '<p>من آخر زيارة يوم ' + fdate(x.from) + ':</p><ul class="mexplore-rlist">' +
+        x.add.map(function (o) { return '<li><strong>اتضافت:</strong> <a href="#explore/board" dir="auto">' + esc(o.title) + '</a> (آخر ميعاد ' + fdate(o.deadline) + ')</li>'; }).join('') +
+        x.re.map(function (o) { return '<li><strong>اتراجعت تاني:</strong> <span dir="auto">' + esc(o.title) + '</span> يوم ' + fdate(o.verified) + '</li>'; }).join('') +
+        (x.gone ? '<li><span class="num">' + x.gone + '</span> ' + (x.gone === 1 ? 'فرصة اختفت' : 'فرص اختفت') + ' (ميعادها فات أو مراجعتها قدمت).</li>' : '') + '</ul>';
+      box.innerHTML = h + '<p><a class="btn" href="#explore/board">افتح اللوحة</a></p></section>';
+    }, true);
+  }
+  function drawRadar(main) {
+    var box = $('#mx-radar'); if (!box) return;
+    var d = D(), S = d.saved;
+    if (!S.length) { box.innerHTML = '<div class="mexplore-empty"><p class="mexplore-none-t">مفيش أبحاث محفوظة للرادار</p><p>اعمل بحث في الأدبيات، ومن فوق النتايج دوس «احفظ البحث للرادار». بعدها تيجي هنا كل أسبوع وتشوف إيه الجديد.</p><p><a class="btn primary" href="#explore">ابدأ بحث</a></p></div>'; return; }
+    box.innerHTML = '<div class="mexplore-listbar"><p><strong class="num mexplore-big">' + S.length + '</strong> ' + (S.length === 1 ? 'بحث محفوظ' : 'أبحاث محفوظة') + '</p><button class="btn primary" type="button" id="mx-rrun"' + (radarBusy ? ' disabled' : '') + '>' + ic('search') + (radarBusy ? 'بنراجع الفهرس…' : 'شغّل الرادار دلوقتي') + '</button></div>' +
+      '<p class="small muted">التشغيل بيبعت طلب واحد للفهرس عن كل بحث محفوظ، فبنشغّله لما تطلب بس عشان منستهلكش حدّك اليومي.</p>' +
+      '<ul class="mexplore-rsaved">' + S.map(function (s, i) {
+        var l = s.last, h = '<li data-i="' + i + '"><div class="mexplore-rcount"><strong class="num">' + nfmt(s.count) + '</strong><span>في الفهرس يوم ' + fdate(s.at) + '</span></div><div class="mexplore-rbody"><h2><bdi dir="auto">' + esc(s.q) + '</bdi></h2>' + (s.fs ? '<p class="small muted"><bdi dir="ltr">' + esc(s.fs) + '</bdi></p>' : '');
+        if (s.err) h += '<p class="mexplore-late">آخر محاولة فشلت: ' + esc(s.err) + '</p>';
+        if (!l) h += '<p class="muted">لسه متشغّلش عليه الرادار من يوم ما حفظته.</p>';
+        else {
+          h += '<p class="mexplore-delta">' + (l.delta > 0 ? '<strong class="num up">+' + nfmt(l.delta) + '</strong> زيادة في العدد' : l.delta < 0 ? '<strong class="num">' + nfmt(l.delta) + '</strong> العدد قلّ (الفهرس بيتنضّف وبيدمج المكرر)' : 'العدد زي ما هو') + ' بين ' + fdate(l.from) + ' و' + fdate(l.to) + '</p>';
+          if (l.fresh && l.fresh.length) h += '<p class="small">عناوين مكانتش في أحدث 25 في اللقطة اللي فاتت:</p><ul class="mexplore-rlist">' + l.fresh.map(function (p) { return '<li><span dir="auto">' + esc(p.title || '[بدون عنوان في الفهرس]') + '</span>' + (p.year ? ' <span class="num muted">(' + p.year + ')</span>' : '') + ' ' + (p.doi ? '<a href="' + esc(p.doi) + '" target="_blank" rel="noopener noreferrer"><bdi dir="ltr">' + esc(p.doi.replace(/^https:\/\/doi\.org\//i, '')) + '</bdi></a>' : p.id ? '<a href="' + esc(p.id) + '" target="_blank" rel="noopener noreferrer">OpenAlex</a>' : '') + '</li>'; }).join('') + '</ul>';
+          else h += '<p class="small muted">مفيش عناوين جديدة في أحدث 25 منشور.</p>';
+        }
+        return h + '</div><button class="btn icon" type="button" data-del aria-label="امسح البحث المحفوظ «' + esc(s.q) + '»">' + H.ic('trash') + '</button></li>';
+      }).join('') + '</ul><p class="small muted">«عنوان جديد» معناه إنه ظهر في أحدث 25 منشور بترتيب تاريخ النشر ومكانش موجود في اللقطة اللي قبلها. بحث قديم اتفهرس متأخر ممكن ميظهرش هنا.</p>';
+    $('#mx-rrun').addEventListener('click', function () {
+      if (radarBusy) return; radarBusy = true; drawRadar(main);
+      var i = 0, t = tday();
+      (function next() {
+        if (i >= S.length) { radarBusy = false; H.save(); if ($('#mx-radar')) drawRadar(main); H.toast('الرادار خلّص'); return; }
+        var s = S[i++];
+        snapshot(s.q, s.fs, function (err, snap) {
+          if (err) s.err = err.msg;
+          else {
+            delete s.err;
+            var old = {}; (s.ids || []).forEach(function (id) { old[id] = 1; });
+            s.last = { from: s.at, to: t, delta: snap.count - s.count, fresh: snap.items.filter(function (p) { return !old[p.id]; }).slice(0, 10).map(function (p) { return { id: p.id, doi: p.doi, title: p.title.slice(0, 300), year: p.year }; }) };
+            s.count = snap.count; s.ids = snap.items.map(function (p) { return p.id; }); s.at = t;
+          }
+          next();
+        });
+      })();
+    });
+    $('.mexplore-rsaved').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-del]'); if (!b) return;
+      if (confirm('تمسح البحث المحفوظ ده؟')) { S.splice(+b.closest('[data-i]').getAttribute('data-i'), 1); H.save(); drawRadar(main); }
+    });
+  }
+
+  H.register('explore', function (main, a, b) {
+    if (a === 'list') listView(main);
+    else if (a === 'idea') ideaView(main, b);
+    else if (a === 'board') boardView(main);
+    else if (a === 'manage') manageView(main);
+    else if (a === 'radar') radarView(main);
+    else searchView(main);
+  });
+  /* exposed for the automated test only: pure formatters */
+  window.HubExplore = { apa: apa, apaName: apaName, ris: ris, bibtex: bibtex, abstractOf: abstractOf, norm: norm, filterStr: filterStr, shown: shown, days: days, match: match, validOpp: validOpp, combine: combine };
+})();
