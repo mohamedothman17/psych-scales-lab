@@ -1,10 +1,9 @@
 /* Theories library, part 1 of 2 (development + cognition).
    One schema for every entry. Text is written from standard textbook knowledge and kept conservative.
-   refs: classic primary sources only, no DOI, all verified:false until checked against the source itself. */
+   refs: filled from data/theories-refs.js, where each entry carries its own checked state. */
 (function () {
   'use strict';
   var T = window.HubTheories = window.HubTheories || { list: [] };
-  function ref(authors, year, title) { return { authors: authors, year: year, title: title, verified: false }; }
 
   T.list.push(
   {
@@ -65,10 +64,7 @@
       'مهام بياجيه الإكلينيكية نفسها: الاحتفاظ (عدد، كمية، وزن)، التصنيف، الترتيب، مهمة الجبال الثلاثة.',
       'المقابلة الإكلينيكية: سؤال مفتوح ومتابعة تبرير الطفل، مش درجة رقمية.'
     ],
-    refs: [
-      ref('Piaget, J.', '1952', 'The Origins of Intelligence in Children (الترجمة الإنجليزية؛ الأصل الفرنسي 1936)'),
-      ref('Piaget, J., & Inhelder, B.', '1969', 'The Psychology of the Child')
-    ]
+    refs: []
   },
   {
     id: 'vygotsky',
@@ -123,11 +119,7 @@
       'عدد ونوع التلميحات المطلوبة للوصول للحل (graduated prompts).',
       'ملاحظة وترميز الكلام الخاص أثناء حل المهام.'
     ],
-    refs: [
-      ref('Vygotsky, L. S.', '1978', 'Mind in Society: The Development of Higher Psychological Processes'),
-      ref('Vygotsky, L. S.', '1962', 'Thought and Language (الترجمة الإنجليزية؛ الأصل الروسي 1934)'),
-      ref('Wood, D., Bruner, J. S., & Ross, G.', '1976', 'The role of tutoring in problem solving')
-    ]
+    refs: []
   },
   {
     id: 'erikson',
@@ -186,14 +178,11 @@
         limits: 'العناد في السن ده طبيعي وله أسباب كتير (تعب، جوع، مزاج)، ومش دليل على مشكلة في «الاستقلال».' }
     ],
     measures: [
-      'مقاييس تقرير ذاتي للمراحل، منها Erikson Psychosocial Stage Inventory (EPSI).',
+      'مقاييس تقرير ذاتي للمراحل، منها Erikson Psychosocial Stage Inventory (EPSI) لروزنتال وزملائه (1981)، وبيغطي أول ست مراحل بس.',
       'مقابلات حالات الهوية المبنية على شغل مارشيا.',
       'القياس هنا أضعف حلقة في النظرية، والأدوات دي بتقيس اتجاهات عامة مش «مرحلة» محددة.'
     ],
-    refs: [
-      ref('Erikson, E. H.', '1950', 'Childhood and Society'),
-      ref('Erikson, E. H.', '1968', 'Identity: Youth and Crisis')
-    ]
+    refs: []
   },
   {
     id: 'bronfenbrenner',
@@ -246,10 +235,7 @@
       'للبيئة المنزلية: HOME Inventory (ملاحظة ومقابلة).',
       'مقابلات مع الأسرة والمدرسة، وملاحظة في أكتر من مكان.'
     ],
-    refs: [
-      ref('Bronfenbrenner, U.', '1979', 'The Ecology of Human Development: Experiments by Nature and Design'),
-      ref('Bronfenbrenner, U., & Morris, P. A.', '2006', 'The bioecological model of human development (فصل في Handbook of Child Psychology)')
-    ]
+    refs: []
   },
   {
     id: 'attachment',
@@ -281,7 +267,7 @@
       'فهم سلوك الطفل وقت الضيق في بداية المدرسة.'
     ],
     context: 'الأساس في أول سنتين-تلاتة، مع امتدادات للطفولة والمراهقة والرشد.',
-    evidence: { status: 'قوي', why: 'من أكتر نظريات النمو اللي عليها أبحاث: ملاحظات مقنّنة، دراسات طولية، وتحليلات بعدية. العلاقة بين حساسية الرعاية والتعلّق الآمن ثابتة لكنها متوسطة الحجم مش كبيرة، والتنبؤ من الطفولة للرشد موجود لكنه مش قوي وبيتأثر بتغيّر الظروف. توزيع الأنماط بيختلف بين الثقافات.' },
+    evidence: { status: 'قوي', why: 'من أكتر نظريات النمو اللي عليها أبحاث: ملاحظات مقنّنة، دراسات طولية، وتحليلات بعدية. العلاقة بين حساسية الرعاية والتعلّق الآمن ثابتة لكنها متوسطة الحجم مش كبيرة (r حوالي .25 في تحليل بعدي سنة 2024)، والتنبؤ من الطفولة للرشد موجود لكنه مش قوي وبيتأثر بتغيّر الظروف. توزيع الأنماط بيختلف بين الثقافات.' },
     criticisms: [
       'موقف الغريب متصمّم في سياق غربي، وتفسير سلوك الطفل فيه بيتأثر بعادات التربية.',
       'ركّزت تاريخياً على الأم، مع إن الطفل بيتعلّق بأكتر من شخص.',
@@ -309,10 +295,7 @@
       'مقابلة تعلّق الراشدين (Adult Attachment Interview).',
       'كل الأدوات دي محتاجة تدريب معتمد، ومش للاستخدام كتشخيص فردي سريع.'
     ],
-    refs: [
-      ref('Bowlby, J.', '1969', 'Attachment and Loss: Vol. 1. Attachment'),
-      ref('Ainsworth, M. D. S., Blehar, M. C., Waters, E., & Wall, S.', '1978', 'Patterns of Attachment: A Psychological Study of the Strange Situation')
-    ]
+    refs: []
   },
   {
     id: 'bandura',
@@ -344,7 +327,7 @@
       'تغذية راجعة محددة عن اللي اتعمل صح بدل مدح عام.'
     ],
     context: 'كل الأعمار؛ تعليم، صحة، رياضة، علاج نفسي.',
-    evidence: { status: 'قوي', why: 'التعلّم بالملاحظة ثابت تجريبياً من الستينات، والعلاقة بين فاعلية الذات والأداء والمثابرة اتكررت في تحليلات بعدية في مجالات كتير. لازم ناخد بالنا إن جزء من العلاقة راجع لإن الأداء السابق نفسه بيرفع الفاعلية، فاتجاه السببية مش دايماً واضح، وإن المقاييس تقرير ذاتي.' },
+    evidence: { status: 'مدعوم مع ملاحظات', why: 'التعلّم بالملاحظة ثابت تجريبياً من الستينات، والارتباط بين فاعلية الذات والأداء اتكرر كتير. لكن تحليلات بعدية لدراسات طولية (Talsma وزملاؤها 2018؛ Vu وزملاؤها 2024) لقت إن أثر الأداء على الفاعلية أكبر من أثر الفاعلية على الأداء، وإن أثر الفاعلية على الأداء صغير وما ظهرش عند الأطفال. علشان كده نزّلنا التقدير من «قوي»: الفاعلية نتيجة للنجاح أكتر ما هي سبب ليه، والمقاييس تقرير ذاتي.' },
     criticisms: [
       'صعب نفصل: هل الفاعلية سبب الأداء ولا نتيجته؟',
       'النظرية واسعة لدرجة إنها بتفسّر حاجات كتير بعد ما تحصل.',
@@ -370,10 +353,7 @@
       'مقاييس فاعلية ذات خاصة بالمهمة، مبنية على إرشادات باندورا (تقدير الثقة من 0 لـ 100).',
       'مقياس الفاعلية العامة General Self-Efficacy Scale (شفارتسر وجيروزاليم)، مع ملاحظة إن باندورا نفسه كان بيفضّل القياس الخاص بالمجال.'
     ],
-    refs: [
-      ref('Bandura, A.', '1977', 'Self-efficacy: Toward a unifying theory of behavioral change'),
-      ref('Bandura, A.', '1986', 'Social Foundations of Thought and Action: A Social Cognitive Theory')
-    ]
+    refs: []
   },
   {
     id: 'infoproc',
@@ -433,11 +413,7 @@
       'الاستدعاء الحر والتعرّف، وزمن الرجع.',
       'دي مهام معملية ومكوّنات في بطاريات مقنّنة، ومعناها بيتحدد بالمعايير اللي اتقنّنت عليها.'
     ],
-    refs: [
-      ref('Miller, G. A.', '1956', 'The magical number seven, plus or minus two: Some limits on our capacity for processing information'),
-      ref('Atkinson, R. C., & Shiffrin, R. M.', '1968', 'Human memory: A proposed system and its control processes'),
-      ref('Craik, F. I. M., & Lockhart, R. S.', '1972', 'Levels of processing: A framework for memory research')
-    ]
+    refs: []
   },
   {
     id: 'baddeley',
@@ -501,10 +477,7 @@
       'مهام المدى المركّب زي Reading Span و Operation Span، ومهمة n-back.',
       'تفسير أي درجة محتاج معايير مقنّنة على مجتمع الطفل.'
     ],
-    refs: [
-      ref('Baddeley, A. D., & Hitch, G. J.', '1974', 'Working memory (فصل في The Psychology of Learning and Motivation, Vol. 8)'),
-      ref('Baddeley, A. D.', '2000', 'The episodic buffer: A new component of working memory?')
-    ]
+    refs: []
   }
   );
 })();
