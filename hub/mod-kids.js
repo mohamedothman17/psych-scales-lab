@@ -161,7 +161,7 @@
     c.keys.forEach(function (f) { document.removeEventListener('keydown', f, true); });
     document.documentElement.classList.remove('mkids-lock');
   }
-  window.addEventListener('hashchange', kill);
+  window.addEventListener('hashchange', function () { if (LIVE && location.hash !== LIVE.hash) kill(); });
   function beep(k) {
     if (!D().sound) return;
     try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); var o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = 330 * Math.pow(1.122, k % 9); g.gain.value = 0.07; o.connect(g); g.connect(AC.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.2); o.stop(AC.currentTime + 0.22); } catch (e) {}
@@ -174,7 +174,7 @@
       '<div class="mkids-stage" id="mkids-stage"></div></div>';
     var root = $('#mkids-play', main), stage = $('#mkids-stage', root), line = $('#mkids-line', root), praise = 0;
     var c = LIVE = {
-      stage: stage, rng: makeRng(SEED != null ? SEED : (Date.now() ^ (Math.random() * 1e9)) >>> 0), dead: false, rej: [], keys: [], da: false, t0: 0, started: false,
+      hash: location.hash, stage: stage, rng: makeRng(SEED != null ? SEED : (Date.now() ^ (Math.random() * 1e9)) >>> 0), dead: false, rej: [], keys: [], da: false, t0: 0, started: false,
       res: { lvl: 0, n: 0, err: 0, hints: null, x: {} }, dev: {},
       say: function (t, mood) { line.textContent = t; $('#mkids-bud', root).innerHTML = buddy(mood); },
       wait: function (ms) {
@@ -406,7 +406,7 @@
       var it = genPattern(c.rng, level), hint = 0, h = scored ? 1 : 3; draw(it);
       var pat = $('#mkids-pat', c.stage), cells = $$('.mkids-cell', pat), opts = $$('.mkids-opt', pat), k;
       c.say('إيه اللي ييجي مكان علامة الاستفهام؟');
-      async function pick() { var b = await c.tap('.mkids-opt'), o = +b.dataset.o; if (o !== it.ai) b.classList.add('tried'); return o === it.ai; }
+      async function pick() { var b = await c.tap('.mkids-opt'), o = +b.dataset.o; pat.dataset.picks = (+pat.dataset.picks || 0) + 1; if (o !== it.ai) b.classList.add('tried'); return o === it.ai; }
       var first = await pick(), ok = first;
       while (!ok && (c.da || !scored) && h <= 3) {
         hint = h; pat.dataset.hint = h;
@@ -421,7 +421,7 @@
             else if (it.unit <= 3) x.classList.add('g' + (Math.floor(i / it.unit) % 2));
             else if (it.cells[i] && it.cells[i].s === it.answer.s) x.classList.add('hl');
           });
-          opts.forEach(function (b) { if (b.classList.contains('tried')) b.setAttribute('aria-disabled', 'true'); });
+          var off = opts.filter(function (b) { return b.classList.contains('tried'); })[0]; if (off) off.setAttribute('aria-disabled', 'true');
         } else {
           c.say('ده اللي بيكمّل النمط. دوس عليه.');
           opts.forEach(function (b, i) { if (i === it.ai) b.classList.add('want'); else b.setAttribute('aria-disabled', 'true'); });
