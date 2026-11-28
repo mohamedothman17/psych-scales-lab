@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Opportunities board file (hub/data/opportunities.json)",
+  "description": "A hand-curated list. Add an entry only after opening the official page yourself and confirming the deadline. The board shows an entry only while its deadline has not passed AND its verified date is at most 30 days old, so an entry nobody re-checks disappears by itself. Use the owner tool at #explore/manage to validate entries and export this file; do not write entries from memory.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "title", "organiser", "type", "url", "deadline", "added", "verified", "verifier"],
+    "properties": {
+      "id": { "type": "string", "description": "Unique short id; never reuse one." },
+      "title": { "type": "string", "description": "Name of the opportunity exactly as the organiser writes it." },
+      "organiser": { "type": "string", "description": "The body offering it." },
+      "type": { "enum": ["scholarship", "grant", "fellowship", "conference", "cfp"], "description": "scholarship = study funding; grant = research funding; fellowship; conference; cfp = call for papers." },
+      "url": { "type": "string", "pattern": "^https://", "description": "The official page of the organiser (https only). Not a news site or an aggregator." },
+      "deadline": { "type": "string", "format": "date", "description": "Application deadline, YYYY-MM-DD, as stated on the official page." },
+      "eligibility": { "type": "string", "description": "Who can apply, in the organiser's terms (level, field, nationality). Used by the transparent matching rules." },
+      "funding": { "type": "string", "description": "What is covered, as stated officially. Leave empty if not stated." },
+      "location": { "type": "string", "description": "Country or city, or online." },
+      "added": { "type": "string", "format": "date", "description": "Day the entry was first added." },
+      "verified": { "type": "string", "format": "date", "description": "Last day a person opened the official page and confirmed the details. Entries older than 30 days are hidden." },
+      "verifier": { "type": "string", "description": "Name of the person who checked." },
+      "notes": { "type": "string", "description": "Optional short note." }
+    }
+  }
+}
