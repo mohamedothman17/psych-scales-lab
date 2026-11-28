@@ -102,7 +102,7 @@
     theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: true },
     kids: { title: 'ألعاب وأنشطة الأطفال', short: 'الألعاب', say: 'ذاكرة، انتباه، استدلال، مرونة، إبداع', roles: ['parent', 'specialist'], ready: false },
     decide: { title: 'بحوث العمليات والقرار', short: 'القرار', say: 'توزيع العينة، الميزانية مقابل القوة، مقارنة البدائل', roles: ['researcher', 'student', 'specialist'], ready: false },
-    explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: false },
+    explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: true },
     cases: { title: 'محاكي الأخصائي', short: 'الحالات', say: 'احكي الحالة، وخد فروض وخطة تتأكد بيها', roles: ['specialist'], ready: false },
     assistant: { title: 'المساعد الذكي', short: 'المساعد', say: 'اسأله عن بحثك، أو خلّيه يشتغل معاك خطوة خطوة', roles: null, ready: true }
   };
