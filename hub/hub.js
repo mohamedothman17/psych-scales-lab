@@ -103,7 +103,7 @@
     kids: { title: 'ألعاب وأنشطة الأطفال', short: 'الألعاب', say: 'ذاكرة، انتباه، استدلال، مرونة، إبداع', roles: ['parent', 'specialist'], ready: true },
     decide: { title: 'بحوث العمليات والقرار', short: 'القرار', say: 'توزيع العينة، الميزانية مقابل القوة، مقارنة البدائل', roles: ['researcher', 'student', 'specialist'], ready: true },
     explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: true },
-    cases: { title: 'محاكي الأخصائي', short: 'الحالات', say: 'احكي الحالة، وخد فروض وخطة تتأكد بيها', roles: ['specialist'], ready: false },
+    cases: { title: 'محاكي الأخصائي', short: 'الحالات', say: 'احكي الحالة، وخد فروض وخطة تتأكد بيها', roles: ['specialist'], ready: true },
     assistant: { title: 'المساعد الذكي', short: 'المساعد', say: 'اسأله عن بحثك، أو خلّيه يشتغل معاك خطوة خطوة', roles: null, ready: true }
   };
   Object.keys(MODS).forEach(function (k) { if (MODS[k].ready) NAV.splice(NAV.length - 1, 0, [k, MODS[k].title, MODS[k].roles, MODS[k].short]); });
@@ -543,7 +543,7 @@
     ethics: [['irb', 'موافقة لجنة الأخلاقيات', 'اسم اللجنة، وحالة الطلب', 'text'], ['consent', 'الموافقة المستنيرة وسرية البيانات', 'هتاخد الموافقة إزاي، وهتحفظ البيانات فين', 'area']],
     notes: [['sup', 'ملاحظات المشرف', 'اكتب الملاحظة وتاريخها', 'area'], ['next', 'الخطوة الجاية', 'حاجة واحدة محددة وموعدها', 'text']]
   };
-  var DESIGNS = ['وصفي ارتباطي', 'وصفي مقارن', 'تجريبي (مجموعتين مستقلتين)', 'تجريبي (قياس قبلي وبعدي لنفس المجموعة)', 'شبه تجريبي', 'طولي', 'بناء وتقنين مقياس', 'نوعي', 'مختلط'];
+  var DESIGNS = ['وصفي ارتباطي', 'وصفي مقارن', 'تجريبي (مجموعتين مستقلتين)', 'تجريبي (قياس قبلي وبعدي لنفس المجموعة)', 'شبه تجريبي', 'تصميم الحالة الواحدة (AB / ABAB / خطوط قاعدية متعددة)', 'طولي', 'بناء وتقنين مقياس', 'نوعي', 'مختلط'];
   var ROLE_V = [['iv', 'مستقل'], ['dv', 'تابع'], ['med', 'وسيط'], ['mod', 'معدِّل'], ['cov', 'ضابط']];
   var LEVEL_V = [['nominal', 'اسمي (فئات)'], ['ordinal', 'ترتيبي'], ['scale', 'كمّي (فتري/نسبي)']];
 
@@ -994,7 +994,7 @@
   V.family = function () {
     var h = '<header class="head"><h1>' + (S.role === 'specialist' ? 'الأطفال اللي بتابعهم' : 'أولادي') + '</h1></header>';
     if (S.kids.length) h += '<div class="kids">' + S.kids.map(function (k) {
-      return '<div class="kid-card"><span class="kid-av" aria-hidden="true">' + esc(String(k.child || '').trim().charAt(0)) + '</span><div><h2>' + esc(k.child) + '</h2><p class="kid-meta"><span class="num">' + esc(k.age) + '</span> سنين · ' + esc(k.grade) + '</p><p class="small kid-consent">موافقة ولي الأمر: ' + esc(k.guardian) + ' · ' + fmtDate(k.date) + '</p><a class="btn" href="#kids">افتح الأنشطة</a></div></div>';
+      return '<div class="kid-card"><span class="kid-av" aria-hidden="true">' + esc(String(k.child || '').trim().charAt(0)) + '</span><div><h2>' + esc(k.child) + '</h2><p class="kid-meta"><span class="num">' + esc(k.age) + '</span> سنين · ' + esc(k.grade) + '</p><p class="small kid-consent">موافقة ولي الأمر: ' + esc(k.guardian) + ' · ' + fmtDate(k.date) + '</p><a class="btn" href="#kids">افتح الأنشطة</a><a class="btn" href="#cases/parent/' + esc(k.id) + '">احكي للأخصائي عن ' + esc(k.child) + '</a></div></div>';
     }).join('') + '</div>';
     h += '<div class="sec"><h2>تسجيل طفل</h2></div><form class="card form" id="kf" novalidate>' +
       '<p class="notice">الأنشطة هنا للتنمية والمتابعة. مش اختبار ذكاء ولا تشخيص، ونتايجها مينفعش يتبني عليها قرار مصيري عن الطفل.</p><div class="two">' +
@@ -1054,7 +1054,7 @@
     register: function (name, fn) { if (MODS[name]) MOD_VIEWS[name] = fn; },
     data: function (name) { if (!S.mods || typeof S.mods !== 'object') S.mods = {}; if (!S.mods[name]) S.mods[name] = {}; return S.mods[name]; },
     state: function () { return S; }, save: save, esc: esc, $: $, $$: $$, toast: toast, ic: ic, field: field, sel: sel, opts: opts,
-    uid: uid, today: today, plural: plural, calm: calm, labs: LABS, go: function (hash) { location.hash = hash; }
+    loadMod: loadMod, uid: uid, today: today, plural: plural, calm: calm, labs: LABS, go: function (hash) { location.hash = hash; }
   };
   /* Floating launcher: opens the assistant as a panel over the current page. */
   (function () {
