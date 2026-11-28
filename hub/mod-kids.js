@@ -153,7 +153,7 @@
   function n(v) { return '<bdi class="num">' + esc(v) + '</bdi>'; }
 
   /* ---------- play shell ---------- */
-  var STOP = { stop: true }, LIVE = null, AC = null, CAP_MS = 270000;
+  var STOP = { stop: true }, LIVE = null, PLAY_HASH = '', AC = null, CAP_MS = 270000;
   var OK_SAY = ['برافو على تركيزك!', 'حلو قوي، كمّل!', 'شاطر إنك بصّيت كويس!', 'تمام كده، كمّل!'], TRY_SAY = ['قرّبت! نجرب واحدة تانية.', 'ولا يهمّك، المهم إنك بتحاول.', 'محاولة حلوة، نكمّل.'];
   function kill() {
     var c = LIVE; if (!c) return; LIVE = null; c.dead = true;
@@ -161,18 +161,28 @@
     c.keys.forEach(function (f) { document.removeEventListener('keydown', f, true); });
     document.documentElement.classList.remove('mkids-lock');
   }
-  window.addEventListener('hashchange', function () { if (LIVE && location.hash !== LIVE.hash) kill(); });
+  /* The play screen is mounted on <body>, above the navigation, and the rest of the page is made inert while it is open. */
+  function unmount() {
+    kill();
+    $$('.mkids-play').forEach(function (el) { el.parentNode.removeChild(el); });
+    $$('[data-mkids-inert]').forEach(function (el) { el.inert = false; el.removeAttribute('data-mkids-inert'); });
+  }
+  window.addEventListener('hashchange', function () { if (PLAY_HASH && location.hash !== PLAY_HASH) { PLAY_HASH = ''; unmount(); } });
   function beep(k) {
     if (!D().sound) return;
     try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); var o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = 330 * Math.pow(1.122, k % 9); g.gain.value = 0.07; o.connect(g); g.connect(AC.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.2); o.stop(AC.currentTime + 0.22); } catch (e) {}
   }
   function play(main, kid, id) {
     var A = ACTS[id], d = D();
-    main.innerHTML = DEFS + '<div class="mkids-play mkids-t-' + A.tone + '" id="mkids-play" data-act="' + id + '" data-phase="intro">' +
+    main.innerHTML = '<h1 class="sr">' + A.name + '</h1>';
+    var root = document.createElement('div'); root.className = 'mkids-play mkids-t-' + A.tone; root.id = 'mkids-play'; root.dataset.act = id; root.dataset.phase = 'intro';
+    $$('body > *').forEach(function (el) { if (!/^(SCRIPT|LINK|STYLE)$/.test(el.tagName) && el.id !== 'toast' && !el.inert) { el.inert = true; el.setAttribute('data-mkids-inert', ''); } });
+    document.body.appendChild(root); PLAY_HASH = location.hash;
+    root.innerHTML = DEFS +
       '<header class="mkids-bar"><button type="button" class="mkids-stop" id="mkids-stop">' + HAND + '<span>مش عاوز ألعب دلوقتي</span></button><div class="mkids-dots" id="mkids-dots" aria-hidden="true"></div></header>' +
       '<div class="mkids-say"><span id="mkids-bud">' + buddy() + '</span><p id="mkids-line" role="status" aria-live="polite"></p></div>' +
-      '<div class="mkids-stage" id="mkids-stage"></div></div>';
-    var root = $('#mkids-play', main), stage = $('#mkids-stage', root), line = $('#mkids-line', root), praise = 0;
+      '<div class="mkids-stage" id="mkids-stage"></div>';
+    var stage = $('#mkids-stage', root), line = $('#mkids-line', root), praise = 0;
     var c = LIVE = {
       hash: location.hash, stage: stage, rng: makeRng(SEED != null ? SEED : (Date.now() ^ (Math.random() * 1e9)) >>> 0), dead: false, rej: [], keys: [], da: false, t0: 0, started: false,
       res: { lvl: 0, n: 0, err: 0, hints: null, x: {} }, dev: {},
@@ -665,7 +675,7 @@
   }
 
   H.register('kids', function (main, a, b) {
-    kill(); D();
+    unmount(); D();
     if (a === 'about') return vAbout(main);
     if (!kidsList().length) return vEmpty(main);
     var kid = a ? kidBy(a) : null;
