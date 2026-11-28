@@ -1,4 +1,4 @@
-/* The assistant ("Instinct"): a chat page at #assistant and a panel any page can open with
+/* The assistant ("مُحكَم"): a chat page at #assistant and a panel any page can open with
    window.HubAssistant.open({ context }). Offline it answers from rules and a local knowledge base; with an
    endpoint or a personal key configured it runs a tool-calling loop against a language model.
    Logic lives in data/assistant-core.js; this file is the interface. */
@@ -101,7 +101,7 @@
   function shell(page) {
     return '<div class="massistant' + (page ? ' is-page' : ' is-sheet') + '" data-mode="offline">' +
       '<header class="massistant-top">' +
-        '<div class="massistant-id">' + sigil() + '<div><p class="massistant-kicker">المساعد الذكي</p>' + (page ? '<h1 class="massistant-name" lang="en" dir="ltr">Instinct</h1>' : '<h2 class="massistant-name" id="massistant-dlg-t" lang="en" dir="ltr">Instinct</h2>') + '</div></div>' +
+        '<div class="massistant-id">' + sigil() + '<div><p class="massistant-kicker">المساعد الذكي</p>' + (page ? '<h1 class="massistant-name">مُحكَم</h1>' : '<h2 class="massistant-name" id="massistant-dlg-t">مُحكَم</h2>') + '</div></div>' +
         '<div class="massistant-bar">' +
           '<button type="button" class="massistant-badge" data-act="settings" aria-haspopup="dialog"><span class="massistant-dot" aria-hidden="true"></span><span class="massistant-badge-t"></span></button>' +
           '<button type="button" class="btn icon" data-act="export" aria-label="نزّل المحادثة كملف نصي" title="نزّل المحادثة">' + ic('download') + '</button>' +
@@ -182,7 +182,7 @@
   function msgHtml(m, last) {
     var cls = 'massistant-msg ' + (m.r === 'u' ? 'me' : 'it') + (m.src === 'safety' ? ' care' : '') + (m.err ? ' err' : ''), h;
     h = '<div class="' + cls + '" data-id="' + m.id + '" data-state="done"' + (m.src ? ' data-src="' + esc(m.src) + '"' : '') + '>';
-    if (m.r !== 'u') h += '<span class="massistant-who">' + (m.src === 'safety' ? 'مهم' : 'Instinct') + '</span>';
+    if (m.r !== 'u') h += '<span class="massistant-who">' + (m.src === 'safety' ? 'مهم' : 'مُحكَم') + '</span>';
     else h += '<span class="sr">إنت: </span>';
     h += '<div class="massistant-text">' + (m.t ? fmt(m.t, m.src === 'safety') : '') + '</div>';
     if (m.confirm) h += confirmHtml(m);
@@ -321,7 +321,7 @@
       if (live || !ui) return live;
       drawHero(); ui.thread.hidden = false;
       $$('.massistant-chips', ui.thread).forEach(function (x) { x.remove(); });
-      ui.thread.insertAdjacentHTML('beforeend', '<div class="massistant-msg it" data-state="typing"><span class="massistant-who">Instinct</span><div class="massistant-text"></div></div>');
+      ui.thread.insertAdjacentHTML('beforeend', '<div class="massistant-msg it" data-state="typing"><span class="massistant-who">مُحكَم</span><div class="massistant-text"></div></div>');
       return live = ui.thread.lastElementChild;
     }
     var io = {
@@ -364,7 +364,7 @@
   /* ---------- export and clear ---------- */
   function exportChat() {
     var ms = D().msgs; if (!ms.length) return H.toast('مفيش محادثة لسه.');
-    var text = 'Instinct - محادثة من منصة مَلَكة\n' + H.today() + '\nالوضع: ' + modeLabel() + '\n\n' + ms.map(function (m) { return (m.r === 'u' ? 'إنت' : 'Instinct') + ':\n' + (m.t || '') + (m.confirm ? '\n[طلب تغيير: ' + m.confirm.tool + ' - ' + (m.confirm.state === 'done' ? 'اتنفّذ' : 'متنفّذش') + ']' : '') + (m.flags && m.flags.length ? '\n[للمراجعة: ' + m.flags.join(' | ') + ']' : ''); }).join('\n\n') + '\n\nتنبيه: المحادثة دي للمساعدة والشرح. مش تشخيص ولا بديل عن مشرفك أو متخصص.\n';
+    var text = 'مُحكَم - محادثة من منصة مَلَكة\n' + H.today() + '\nالوضع: ' + modeLabel() + '\n\n' + ms.map(function (m) { return (m.r === 'u' ? 'إنت' : 'مُحكَم') + ':\n' + (m.t || '') + (m.confirm ? '\n[طلب تغيير: ' + m.confirm.tool + ' - ' + (m.confirm.state === 'done' ? 'اتنفّذ' : 'متنفّذش') + ']' : '') + (m.flags && m.flags.length ? '\n[للمراجعة: ' + m.flags.join(' | ') + ']' : ''); }).join('\n\n') + '\n\nتنبيه: المحادثة دي للمساعدة والشرح. مش تشخيص ولا بديل عن مشرفك أو متخصص.\n';
     try {
       var url = URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' })), a = document.createElement('a');
       a.href = url; a.download = 'instinct-' + H.today() + '.txt'; document.body.appendChild(a); a.click(); a.remove();

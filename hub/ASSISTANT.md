@@ -1,4 +1,4 @@
-# The assistant ("Instinct")
+# The assistant ("مُحكَم")
 
 A chat page at `#assistant` and a panel other pages can open. It has two layers:
 
