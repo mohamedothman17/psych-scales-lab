@@ -159,7 +159,7 @@ button.mcases-cell{cursor:pointer;min-height:44px}
 button.mcases-cell:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .mcases-cell.v-y{background:var(--status-wash);color:var(--status);border-color:transparent;font-weight:600}
 .mcases-cell.v-n{color:var(--bad);border-color:var(--bad);font-weight:600}
-.mcases-kind{font-weight:600;font-size:.86rem}
+.mcases-kind{font-weight:600;font-size:.86rem;white-space:nowrap}
 .mcases-kind.ok{color:var(--status)}.mcases-kind.bad{color:var(--bad)}.mcases-kind.one{color:var(--ink-2)}
 
 /* hypotheses */
@@ -432,7 +432,8 @@ button.mcases-cell:focus-visible{outline:2px solid var(--focus);outline-offset:2
 .mcases-ix th[scope=row]{white-space:normal;color:var(--ink);font-size:.95rem;min-width:150px}
 .mcases-ix td{vertical-align:top;font-size:.9rem}
 .mcases-ix td.num{font-family:var(--display);font-weight:700;font-size:1.1rem;white-space:nowrap}
-.mcases-ix td:last-child{color:var(--ink-2);min-width:240px}
+.mcases-ix td:last-child{color:var(--ink-2);min-width:300px;width:52%;line-height:1.7}
+.mcases-ix td[colspan]{text-align:center}
 .mcases-dz{list-style:none;padding:0;margin:0 0 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
 .mcases-dz li{padding:18px;border-radius:18px;background:var(--surface-2);border:1px solid var(--line)}
 .mcases-dz li.fit{background:var(--surface);border:2px solid var(--brand);border-radius:18px 18px 18px 6px}
