@@ -487,5 +487,194 @@
     }
   };
 
-  /*__VIEWS__*/
+  /* ---------- words for a session: what happened, in plain numbers, and the child's own earlier session ---------- */
+  function median(a) { if (!a || !a.length) return null; var s = a.slice().sort(function (p, q) { return p - q; }), m = s.length >> 1; return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2); }
+  function nStars(k) { return H.plural(k, 'نجمة واحدة', 'نجمتين', 'نجوم', 'نجمة'); }
+  function times(k) { return k === 0 ? 'ولا مرة' : H.plural(k, 'مرة واحدة', 'مرتين', 'مرات', 'مرة'); }
+  function helped(s) { return s.hints ? s.hints[1] + s.hints[2] + s.hints[3] : 0; }
+  function describe(s) {
+    var x = s.x || {};
+    if (!s.n) return 'بدأ اللعبة ووقف قبل أول محاولة محسوبة.';
+    if (s.a === 'stars') return (s.lvl ? 'وصل لتسلسل من ' + nStars(s.lvl) + ' وعاده لوحده' : 'جرّب تسلسلات من نجمتين ولسه ما عادش واحد لوحده') + '، في ' + s.n + ' محاولات.' + (s.hints ? ' احتاج مساعدة في ' + helped(s) + ' منها.' : '');
+    if (s.a === 'gng') return 'القطة ظهرت ' + times(x.go) + ' وسلّم عليها في ' + x.hit + ' منها. الكلب ظهر ' + times(x.nogo) + ' واستنى في ' + x.cr + ' منها.';
+    if (s.a === 'flip') return 'فرز ' + s.n + ' كارت. القاعدة اتغيّرت ' + times(x.sw) + '، وأول كارت بعد التغيير اتحط في مكانه الصح في ' + (x.sw - x.swErr) + ' منها.';
+    if (s.a === 'pattern') return (s.lvl ? 'كمّل لوحده أنماط لحد المستوى ' + s.lvl + ' من ' + PAT_MAX + ' (' + PAT_SAY[s.lvl] + ')' : 'جرّب أنماط المستوى الأول ولسه ما كمّلش واحد لوحده') + '، في ' + s.n + ' أنماط.' + (s.hints ? ' احتاج مساعدة في ' + helped(s) + ' منها.' : '');
+    if (s.a === 'tower') { var best = towerBest(s); return s.lvl ? 'نقل برج من ' + s.lvl + ' حلقات في ' + best.moves + ' حركة (أقل عدد ممكن ' + best.min + ').' : 'جرّب برج الحلقات ولسه ما نقلوش كله.'; }
+    return '';
+  }
+  function towerBest(s) { var best = null; String((s.x || {}).rounds || '').split(' ').forEach(function (r) { var m = /^(\d):(\d+)\/(\d+)$/.exec(r); if (m && +m[1] === s.lvl && (!best || +m[2] < best.moves)) best = { moves: +m[2], min: +m[3] }; }); return best || { moves: 0, min: towerMin(s.lvl || 3) }; }
+  function compare(s, p) {
+    if (!p) return 'دي أول جلسة محسوبة في اللعبة دي، فمفيش حاجة نقارن بيها لسه.';
+    var x = s.x || {}, y = p.x || {}, same = 'زي المرة اللي فاتت';
+    if (s.a === 'stars') return s.lvl === p.lvl ? 'أطول تسلسل ' + same + ' (' + s.lvl + ').' : 'أطول تسلسل المرة دي ' + s.lvl + '، والمرة اللي فاتت ' + p.lvl + '.';
+    if (s.a === 'gng') return 'داس على الكلب ' + times(x.fa) + ' من ' + x.nogo + '، والمرة اللي فاتت ' + times(y.fa) + ' من ' + y.nogo + '. فاتته القطة ' + times(x.miss) + '، والمرة اللي فاتت ' + times(y.miss) + '.';
+    if (s.a === 'flip') return 'غلط في أول كارت بعد التغيير ' + times(x.swErr) + ' من ' + x.sw + '، والمرة اللي فاتت ' + times(y.swErr) + ' من ' + y.sw + '.';
+    if (s.a === 'pattern') return s.lvl === p.lvl ? 'نفس مستوى المرة اللي فاتت (' + s.lvl + ').' : 'المستوى المرة دي ' + s.lvl + '، والمرة اللي فاتت ' + p.lvl + '.';
+    if (s.a === 'tower') { var a = towerBest(s), b = towerBest(p); return s.lvl && p.lvl ? 'المرة دي ' + s.lvl + ' حلقات في ' + a.moves + ' حركة، والمرة اللي فاتت ' + p.lvl + ' حلقات في ' + b.moves + ' حركة.' : 'المرة اللي فاتت ' + (p.lvl ? 'نقل برج من ' + p.lvl + ' حلقات.' : 'ما نقلش البرج كله.'); }
+    return '';
+  }
+  function detail(s) {
+    var x = s.x || {};
+    if (s.a === 'gng') return 'go ' + x.go + ' · hit ' + x.hit + ' · miss ' + x.miss + ' · no-go ' + x.nogo + ' · false alarm ' + x.fa + ' · early ' + x.early + ' · median RT ' + (median(x.rts) == null ? '-' : median(x.rts) + ' ms') + ' (n=' + (x.rts || []).length + ') · blocks ' + (x.trail || '-');
+    if (s.a === 'flip') return 'switches ' + x.sw + ' · switch-trial errors ' + x.swErr + ' · repeat-trial errors ' + x.stayErr + ' · pre-switch errors ' + x.pre + ' · runs ' + (x.trail || '-');
+    if (s.a === 'tower') return 'rounds (discs:moves/minimum) ' + (x.rounds || '-') + ' · illegal attempts ' + s.err;
+    return 'trials (level+/-) ' + (x.trail || '-');
+  }
+  var DEV = { touch: 'لمس', mouse: 'ماوس', pen: 'قلم', keyboard: 'كيبورد', unknown: 'غير معروف' };
+  function nextAct(id) { var best = ORDER[0], bn = 1e9; ORDER.forEach(function (a) { var k = ofAct(id, a).length; if (k < bn) { bn = k; best = a; } }); return best; }
+  function days(id) { var o = {}; logOf(id).forEach(function (s) { o[s.d] = 1; }); return Object.keys(o).length; }
+
+  /* ---------- views ---------- */
+  function crumb(kid, here) { return '<p class="mkids-crumb"><a href="#kids">الأطفال</a>' + (kid ? ' <span aria-hidden="true">‹</span> <a href="#kids/' + esc(kid.id) + '">رحلة ' + esc(kid.child) + '</a>' : '') + (here ? ' <span aria-hidden="true">‹</span> <span>' + here + '</span>' : '') + '</p>'; }
+  function grown(kid, cur) {
+    var spec = H.state().role === 'specialist', L = [['parent', 'متابعة ولي الأمر'], ['spec', 'عرض الأخصائي'], ['plan', 'مسودة خطة التنمية']].filter(function (l) { return spec || l[0] === 'parent'; });
+    return '<nav class="mkids-grown" aria-label="للكبار"><span class="mkids-grown-l">للكبار</span>' + L.map(function (l) { return '<a class="btn' + (cur === l[0] ? ' on' : '') + '" href="#kids/' + esc(kid.id) + '/' + l[0] + '"' + (cur === l[0] ? ' aria-current="page"' : '') + '>' + l[1] + '</a>'; }).join('') + '<a class="btn ghost" href="#kids/about">عن الألعاب</a></nav>';
+  }
+  var TONES = ['mint', 'sun', 'lilac', 'coral'];
+  function face(i) { var t = { s: i % 4, c: i % 4, z: 2 }; return '<span class="mkids-face">' + token(t) + '<svg class="mkids-face-f" viewBox="-50 -50 100 100" aria-hidden="true" focusable="false"><circle cx="-13" cy="-4" r="5"/><circle cx="13" cy="-4" r="5"/><path d="M-13 12q13 11 26 0"/></svg></span>'; }
+
+  function vEmpty(main) {
+    main.innerHTML = '<header class="head"><h1 class="mega" data-reveal="words">ألعاب <em>وأنشطة</em> الأطفال</h1><p class="lead">الألعاب بتشتغل لطفل مسجّل بموافقة ولي أمره. التسجيل بياخد دقيقة.</p></header>' +
+      '<section class="mkids-empty block tile mint"><div class="mkids-empty-art">' + buddy() + '</div><div><h2>لسه مفيش طفل مسجّل</h2><p>سجّل الطفل الأول من صفحة «أولادي»، وبعدها ارجع هنا وابدأوا اللعب.</p><p class="row"><a class="btn inked big" href="#family">سجّل طفل</a><a class="btn onblock" href="#kids/about">عن الألعاب</a></p></div></section>' +
+      '<p class="notice mkids-cav">' + CAVEAT + '</p>';
+  }
+  function vPick(main) {
+    var d = D(), ks = kidsList();
+    main.innerHTML = DEFS + '<header class="head"><h1 class="mega" data-reveal="words">مين هيلعب <em>النهارده</em>؟</h1><p class="lead">اختار الطفل. كل جلسة لعب من 3 لـ 5 دقايق، وزرار «مش عاوز ألعب دلوقتي» موجود في كل شاشة.</p></header>' +
+      '<div class="mkids-pick" data-stagger="80">' + ks.map(function (k, i) {
+        var cnt = logOf(k.id).length;
+        return '<a class="mkids-kid block tile ' + TONES[i % 4] + '" href="#kids/' + esc(k.id) + '" data-kid="' + esc(k.id) + '">' + face(i + 1) + '<strong>' + esc(k.child) + '</strong><span class="mkids-kid-m">' + esc(k.grade) + '</span><span class="mkids-kid-s">' + star() + (cnt ? n(cnt) + ' ' + (cnt === 1 ? 'نجمة' : cnt === 2 ? 'نجمتين' : cnt <= 10 ? 'نجوم' : 'نجمة') : 'أول رحلة') + '</span></a>';
+      }).join('') + '</div>' +
+      '<section class="mkids-adults"><h2>للكبار</h2><div class="row"><a class="btn" href="#kids/about">إيه اللي الألعاب دي بتمرّنه؟</a><a class="btn" href="#family">سجّل طفل تاني</a>' +
+      '<button type="button" class="btn" id="mkids-sound" aria-pressed="' + (d.sound ? 'true' : 'false') + '">' + (d.sound ? 'الصوت شغّال' : 'الصوت مقفول') + '</button></div><p class="notice mkids-cav">' + CAVEAT + '</p></section>';
+    $('#mkids-sound', main).addEventListener('click', function () { d.sound = !d.sound; H.save(); this.setAttribute('aria-pressed', d.sound ? 'true' : 'false'); this.textContent = d.sound ? 'الصوت شغّال' : 'الصوت مقفول'; if (d.sound) beep(4); });
+  }
+  function vJourney(main, kid) {
+    var lg = logOf(kid.id), cnt = lg.length, nx = nextAct(kid.id), lap = cnt % 10, dn = days(kid.id), A = ACTS[nx];
+    var P = [[70, 196], [168, 118], [262, 190], [352, 92], [452, 168], [548, 70], [640, 150], [736, 62], [826, 142], [930, 60]], path = 'M' + P.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L');
+    var map = '<svg class="mkids-map-svg" viewBox="0 0 1000 250" role="img" aria-label="خريطة الرحلة: ' + lap + ' من 10 نجوم في اللفة دي"><path class="mkids-trail" d="' + path + '"/>' + (lap > 1 ? '<path class="mkids-trail on" d="M' + P.slice(0, lap).map(function (p) { return p[0] + ' ' + p[1]; }).join(' L') + '"/>' : '') +
+      P.map(function (p, i) { var on = i < lap, nxt = i === lap, z = on ? 46 : nxt ? 40 : 22; return (nxt ? '<circle class="mkids-here" cx="' + p[0] + '" cy="' + p[1] + '" r="30"/>' : '') + '<use class="mkids-node' + (on ? ' on' : nxt ? ' next' : '') + '" href="#star4" x="' + (p[0] - z / 2) + '" y="' + (p[1] - z / 2) + '" width="' + z + '" height="' + z + '"/>'; }).join('') + '</svg>';
+    var stickers = ''; for (var i = 0; i < Math.min(dn, 12); i++) stickers += face(i);
+    main.innerHTML = DEFS + crumb() + '<header class="head mkids-j-head"><h1 class="mega">رحلة <em>' + esc(kid.child) + '</em></h1></header>' +
+      '<div class="mkids-j"><section class="mkids-map tile" data-reveal><div class="mkids-map-top"><p class="mkids-count"><span class="num" id="mkids-total">' + cnt + '</span><span>' + (cnt === 1 ? 'نجمة' : cnt === 2 ? 'نجمتين' : cnt >= 3 && cnt <= 10 ? 'نجوم' : 'نجمة') + ' في رحلتك</span></p><p class="mkids-map-say">كل مرة تلعب وتحاول، نجمة جديدة بتنوّر.</p></div>' + map +
+      (dn ? '<div class="mkids-stickers"><span class="mkids-stickers-l">' + (dn === 1 ? 'يوم لعب واحد' : dn === 2 ? 'يومين لعب' : n(dn) + ' ' + (dn <= 10 ? 'أيام لعب' : 'يوم لعب')) + '</span>' + stickers + '</div>' : '') + '</section>' +
+      '<a class="mkids-next block tile ' + (A.tone === 'night' ? 'mkids-night' : A.tone) + '" href="#kids/' + esc(kid.id) + '/' + nx + '" id="mkids-next" data-act="' + nx + '" data-glow-host><span class="block-label">اللعبة الجاية</span><strong class="block-title">' + A.name + '</strong>' + ART[nx] + '<span class="mkids-playbtn">يلا نلعب</span></a>' +
+      '<ul class="mkids-acts" data-stagger="70">' + ORDER.filter(function (a) { return a !== nx; }).map(function (a) { var k = ofAct(kid.id, a).length; return '<li><a class="mkids-act ' + (ACTS[a].tone === 'night' ? 'mkids-night' : ACTS[a].tone) + '" href="#kids/' + esc(kid.id) + '/' + a + '" data-act="' + a + '">' + ART[a] + '<strong>' + ACTS[a].name + '</strong><span class="mkids-act-n">' + (k ? star() + n(k) : 'جديدة') + '</span></a></li>'; }).join('') + '</ul></div>' +
+      grown(kid);
+  }
+
+  function vParent(main, kid) {
+    var lg = logOf(kid.id), acts = ORDER.filter(function (a) { return ofAct(kid.id, a).length; }).sort(function (a, b) { var x = ofAct(kid.id, a), y = ofAct(kid.id, b); return lg.indexOf(y[y.length - 1]) - lg.indexOf(x[x.length - 1]); });
+    var h = DEFS + crumb(kid, 'متابعة ولي الأمر') + '<header class="head"><h1 class="mega">' + esc(kid.child) + ' <em>عمل إيه</em>؟</h1><p class="lead">وصف بسيط للي حصل في اللعب، ومقارنة بجلسات ' + esc(kid.child) + ' نفسه بس. مفيش مستويات ولا مقارنة بأطفال تانيين.</p></header>' + grown(kid, 'parent');
+    if (!lg.length) h += '<section class="mkids-none tile"><h2>لسه مفيش جلسات</h2><p>أول ما ' + esc(kid.child) + ' يلعب أول لعبة، هتلاقي هنا وصف للي حصل.</p><p><a class="btn primary" href="#kids/' + esc(kid.id) + '">افتح الرحلة</a></p></section>';
+    else {
+      var last = lg[lg.length - 1], C = CONS[ACTS[last.a].cons], tip = C.home[(ofAct(kid.id, last.a).length - 1) % C.home.length];
+      h += '<div class="mkids-pgrid"><div class="mkids-reps">' + acts.map(function (a, i) {
+        var ss = ofAct(kid.id, a), s = ss[ss.length - 1], scored = ss.filter(function (q) { return q.n > 0 && q !== s; }), prev = scored[scored.length - 1], notes = ss.filter(function (q) { return q.note; }).slice(-3);
+        return '<article class="mkids-rep tile' + (i === 0 ? ' first' : '') + '" data-act="' + a + '"><div class="mkids-rep-art mkids-tone-' + ACTS[a].tone + '">' + ART[a] + '</div><div class="mkids-rep-b"><h2>' + ACTS[a].name + '</h2><p class="mkids-rep-what">' + esc(describe(s)) + '</p>' +
+          (s.n ? '<p class="mkids-rep-cmp">' + esc(compare(s, prev)) + '</p>' : '') + (s.done ? '' : '<p class="small muted">الجلسة دي وقفت قبل آخرها، وده عادي.</p>') +
+          '<p class="small muted">آخر جلسة ' + fmtDate(s.d) + ' · ' + (ss.length === 1 ? 'جلسة واحدة' : ss.length === 2 ? 'جلستين' : n(ss.length) + ' جلسات') + ' · اللعبة بتمرّن ' + CONS[ACTS[a].cons].plain + '.</p>' +
+          (notes.length ? '<ul class="mkids-rep-notes">' + notes.map(function (q) { return '<li>' + fmtDate(q.d) + ': ' + esc(q.note) + '</li>'; }).join('') + '</ul>' : '') + '</div></article>';
+      }).join('') + '</div><aside class="mkids-side"><section class="mkids-tip block tile sun"><span class="block-label">نشاط للبيت من غير شاشة</span><h2>' + C.name + '</h2><p>' + tip + '</p><p class="small">اللعب ده للمتعة والتمرين مع بعض، مش واجب ولا امتحان.</p></section>' +
+        '<p class="notice mkids-cav">' + CAVEAT + '</p></aside></div>';
+    }
+    main.innerHTML = h;
+  }
+
+  function chart(ss, A) {
+    var W = 280, Hh = 130, L = 26, R = 8, T = 10, B = 22, max = A.max, pts = ss.map(function (s, i) { return [ss.length === 1 ? (L + (W - R)) / 2 : L + i * (W - L - R) / (ss.length - 1), T + (Hh - T - B) * (1 - s.lvl / max), s]; });
+    var g = ''; for (var y = 0; y <= max; y += max > 6 ? 3 : 2) { var yy = T + (Hh - T - B) * (1 - y / max); g += '<line class="mkids-grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '"/><text class="mkids-tick" x="' + (L - 6) + '" y="' + (yy + 4) + '" text-anchor="end">' + y + '</text>'; }
+    return '<svg class="mkids-chart" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="' + A.unit + ' عبر ' + ss.length + ' جلسات: ' + ss.map(function (s) { return s.lvl; }).join('، ') + '">' + g +
+      (pts.length > 1 ? '<polyline class="mkids-line" points="' + pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>' : '') +
+      pts.map(function (p) { return (p[2].done ? '<circle class="mkids-pt" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5"/>' : '<rect class="mkids-pt part" x="' + (p[0] - 4.5).toFixed(1) + '" y="' + (p[1] - 4.5).toFixed(1) + '" width="9" height="9"/>') + '<text class="mkids-val" x="' + p[0].toFixed(1) + '" y="' + (p[1] - 9).toFixed(1) + '" text-anchor="middle">' + p[2].lvl + '</text>'; }).join('') +
+      '<text class="mkids-tick" x="' + L + '" y="' + (Hh - 5) + '" text-anchor="start">1</text>' + (ss.length > 1 ? '<text class="mkids-tick" x="' + (W - R) + '" y="' + (Hh - 5) + '" text-anchor="end">' + ss.length + '</text>' : '') + '</svg>';
+  }
+  function csv(kid) {
+    var cols = ['child_id', 'child', 'date', 'time', 'activity', 'completed', 'difficulty_reached', 'trials', 'errors', 'graded_help', 'hint0', 'hint1', 'hint2', 'hint3', 'duration_s', 'device', 'viewport', 'details', 'hit_rt_ms_raw', 'adult_note'];
+    function q(v) { v = v == null ? '' : String(v); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+    var rows = logOf(kid.id).map(function (s) { var hh = s.hints || ['', '', '', '']; return [kid.id, kid.child, s.d, s.t, s.a, s.done, s.lvl, s.n, s.err, s.da, hh[0], hh[1], hh[2], hh[3], s.dur, s.dev, s.vp, detail(s), ((s.x || {}).rts || []).join(' '), s.note].map(q).join(','); });
+    return '﻿' + cols.join(',') + '\n' + rows.join('\n') + '\n';
+  }
+  function gate(main, kid, what) {
+    if (H.state().role === 'specialist') return false;
+    main.innerHTML = crumb(kid, what) + '<header class="head"><h1>' + what + '</h1><p class="lead">الصفحة دي للأخصائي. لو إنت أخصائي، غيّر دورك من زرار الدور، وبعدها ارجع هنا.</p><p class="row"><a class="btn primary" href="#role">غيّر الدور</a><a class="btn" href="#kids/' + esc(kid.id) + '/parent">متابعة ولي الأمر</a></p></header>';
+    return true;
+  }
+  function vSpec(main, kid) {
+    if (gate(main, kid, 'عرض الأخصائي')) return;
+    var d = D(), lg = logOf(kid.id);
+    var h = crumb(kid, 'عرض الأخصائي') + '<header class="head"><h1 class="mega">أرقام <em>' + esc(kid.child) + '</em> الخام</h1><p class="lead">' + esc(kid.grade) + ' · ' + n(kid.age) + ' سنة · ' + (lg.length === 1 ? 'جلسة واحدة' : lg.length === 2 ? 'جلستين' : n(lg.length) + ' جلسات') + '. أرقام وصفية من لعب على جهاز شخصي، من غير تفسير معياري.</p></header>' + grown(kid, 'spec') + '<p class="notice mkids-cav">' + CAVEAT + '</p>';
+    if (!lg.length) h += '<section class="mkids-none tile"><h2>لسه مفيش جلسات</h2><p>الجدول والرسم هيظهروا بعد أول جلسة لعب.</p></section>';
+    else {
+      h += '<section class="mkids-charts" aria-label="الصعوبة اللي وصلها عبر الجلسات">' + ORDER.filter(function (a) { return ofAct(kid.id, a).length; }).map(function (a) {
+        var ss = ofAct(kid.id, a), hs = [0, 0, 0, 0], any = false; ss.forEach(function (s) { if (s.hints) { any = true; s.hints.forEach(function (v, i) { hs[i] += v; }); } });
+        return '<figure class="mkids-fig tile" data-act="' + a + '"><figcaption><strong>' + ACTS[a].name + '</strong><span class="small muted">' + ACTS[a].unit + ' (من ' + ACTS[a].max + ') في كل جلسة</span></figcaption>' + chart(ss, ACTS[a]) +
+          (any ? '<p class="mkids-hints small" data-hints="' + hs.join(',') + '">درجات المساعدة في كل المحاولات: من غير ' + n(hs[0]) + ' · إعادة ' + n(hs[1]) + ' · توضيح ' + n(hs[2]) + ' · حل مشترك ' + n(hs[3]) + '</p>' : ACTS[a].da ? '<p class="mkids-hints small muted">المساعدة المتدرجة كانت مقفولة.</p>' : '') + '</figure>';
+      }).join('') + '</section><p class="small muted">الدايرة جلسة كملت، والمربع جلسة وقفت قبل آخرها. المحور الأفقي ترتيب الجلسة.</p>' +
+        '<section class="mkids-raw card"><div class="mkids-raw-h"><h2>كل الجلسات</h2><button type="button" class="btn primary" id="mkids-csv">' + H.ic('download') + 'نزّل CSV</button></div>' +
+        '<div class="tablewrap" tabindex="0" role="region" aria-label="جدول الجلسات"><table class="mkids-table"><thead><tr><th>التاريخ</th><th>اللعبة</th><th>كملت</th><th>الصعوبة</th><th>محاولات</th><th>أخطاء</th><th>مساعدة 0/1/2/3</th><th>المدة (ث)</th><th>الجهاز</th><th>تفاصيل خام</th><th>ملاحظة الكبير</th></tr></thead><tbody>' +
+        lg.slice().reverse().map(function (s) { return '<tr data-act="' + s.a + '"><td>' + fmtDate(s.d) + ' <bdi class="num small muted">' + esc(s.t) + '</bdi></td><td>' + ACTS[s.a].name + '</td><td>' + (s.done ? 'أيوه' : 'وقفت') + '</td><td class="num">' + s.lvl + '</td><td class="num">' + s.n + '</td><td class="num">' + s.err + '</td><td class="num"><bdi dir="ltr">' + (s.hints ? s.hints.join('/') : '-') + '</bdi></td><td class="num">' + s.dur + '</td><td>' + (DEV[s.dev] || esc(s.dev)) + ' <bdi class="num small muted" dir="ltr">' + esc(s.vp) + '</bdi></td><td class="mkids-det"><bdi dir="ltr">' + esc(detail(s)) + '</bdi></td><td>' + esc(s.note) + '</td></tr>'; }).join('') +
+        '</tbody></table></div><p class="small muted">الصعوبة: أعلى درجة نجح فيها الطفل من غير مساعدة. أزمنة الاستجابة بيانات خام بس: توقيت المتصفح والموبايل مش دقيق كفاية لمقارنات، وبيتأثر بالجهاز والشاشة. المدة بتشمل التجربة والشرح.</p></section>';
+    }
+    h += '<section class="mkids-obs card"><label for="mkids-obs">ملاحظات الأخصائي عن ' + esc(kid.child) + '<span class="hint">سلوك الطفل وقت اللعب، ظروف الجلسة، وأي حاجة الأرقام ما بتقولهاش. بتتحفظ على الجهاز ده.</span></label><textarea id="mkids-obs">' + esc(d.notes[kid.id] || '') + '</textarea><p class="row mkids-obs-end"><a class="btn" href="#kids/' + esc(kid.id) + '/plan">افتح مسودة خطة التنمية</a></p></section>';
+    main.innerHTML = h;
+    $('#mkids-obs', main).addEventListener('input', function () { d.notes[kid.id] = this.value; H.save(); });
+    var b = $('#mkids-csv', main); if (b) b.addEventListener('click', function () {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv(kid)], { type: 'text/csv;charset=utf-8' })); a.download = 'kids-sessions-' + kid.id + '.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); H.toast('الملف نزل');
+    });
+  }
+
+  function propose(cid) {
+    var C = CONS[cid], dt = new Date(Date.now() + 28 * 864e5), rev = ('0' + dt.getDate()).slice(-2) + '/' + ('0' + (dt.getMonth() + 1)).slice(-2) + '/' + dt.getFullYear();
+    return { cons: cid, goal: 'فرص لعب منتظمة تمرّن ' + C.name + ': ' + C.plain + '.',
+      tool: C.acts.map(function (a) { return '«' + ACTS[a].name + '»' + (ACTS[a].da ? ' مع المساعدة المتدرجة' : ''); }).join('، ') + '، مع لعبة تانية من اختيار الطفل علشان التنويع.',
+      off: C.home.join('\n'), freq: '3 مرات في الأسبوع، في أيام متفرقة', dur: 'من 10 لـ 15 دقيقة: لعبة واحدة على المنصة (3 لـ 5 دقايق) ونشاط واحد من غير شاشة',
+      watch: C.watch + '\nوكمان: مزاج الطفل، التعب، الدوشة، والجهاز المستخدم في كل جلسة.', review: 'بعد 4 أسابيع (' + rev + '): نراجع الملاحظات مع ولي الأمر ونقرر نكمّل أو نعدّل.', note: '' };
+  }
+  var PF = [['goal', 'الهدف', 'area'], ['tool', 'أنشطة على المنصة', 'area'], ['off', 'أنشطة من غير شاشة', 'area'], ['freq', 'التكرار', ''], ['dur', 'مدة الجلسة', ''], ['watch', 'نلاحظ إيه', 'area'], ['review', 'موعد المراجعة', ''], ['note', 'ملاحظات الأخصائي', 'area']];
+  function vPlan(main, kid) {
+    if (gate(main, kid, 'مسودة خطة التنمية')) return;
+    var d = D(), pl = d.plans[kid.id] || null;
+    main.innerHTML = crumb(kid, 'مسودة خطة التنمية') + '<div class="mkids-plan"><header class="head"><p class="mkids-stamp">مسودة يعتمدها الأخصائي</p><h1>خطة تنمية فردية: ' + esc(kid.child) + '</h1><p class="lead">' + esc(kid.grade) + ' · ' + n(kid.age) + ' سنة · ' + fmtDate(pl && pl.date || H.today()) + '</p></header>' + grown(kid, 'plan') +
+      '<section class="card mkids-plan-pick"><div class="mkids-plan-row"><div class="fld">' + H.sel('mkids-cons', 'الهدف هيركّز على إيه؟', Object.keys(CONS).map(function (k) { return [k, CONS[k].name]; }), pl ? pl.cons : '', 'الاقتراح نقطة بداية بس. كل خانة تحت تتعدّل.') + '</div><button type="button" class="btn primary" id="mkids-prop">اقترح خطة</button></div><p class="err" id="mkids-plan-err" role="alert"></p></section>' +
+      '<form class="card form mkids-plan-f" id="mkids-plan-f"' + (pl ? '' : ' hidden') + '>' + PF.map(function (f) { return '<div class="fld mkids-pf" data-k="' + f[0] + '">' + H.field('mkids-p-' + f[0], f[1], pl ? pl[f[0]] : '', '', f[2] || 'text') + '<div class="mkids-print" aria-hidden="true"></div></div>'; }).join('') +
+      '<p class="notice mkids-plan-cav">مقترح مبدئي مبني على طبيعة الألعاب، مش على قياس مقنن. الدليل العلمي على إن التمرّن على ألعاب زي دي بينتقل أثره للدراسة والحياة اليومية محدود ومختلَف عليه، فالخطة بتوصف فرص لعب وملاحظة، مش علاج. القرار للأخصائي بعد ما يشوف الطفل.</p>' +
+      '<p class="mkids-sign">اعتماد الأخصائي: الاسم ........................ التوقيع ........................ التاريخ ................</p>' +
+      '<p class="form-end row"><button type="button" class="btn primary" id="mkids-print">اطبع المسودة</button><span class="small muted" id="mkids-plan-saved" role="status"></span></p></form></div>';
+    var form = $('#mkids-plan-f', main);
+    function mirror() { $$('.mkids-pf', form).forEach(function (w) { $('.mkids-print', w).textContent = $('input,textarea', w).value; }); }
+    function fill() { PF.forEach(function (f) { $('#mkids-p-' + f[0], main).value = pl[f[0]] || ''; }); form.hidden = false; mirror(); }
+    $('#mkids-prop', main).addEventListener('click', function () {
+      var v = $('#mkids-cons', main).value, err = $('#mkids-plan-err', main);
+      if (!v) { err.textContent = 'اختار الهدف الأول.'; return; }
+      err.textContent = '';
+      if (pl && pl.cons && !window.confirm('الاقتراح الجديد هيمسح اللي مكتوب في الخطة. نكمّل؟')) return;
+      pl = d.plans[kid.id] = propose(v); pl.date = H.today(); H.save(); fill(); H.toast('اتحفظ');
+    });
+    form.addEventListener('input', function (e) { var w = e.target.closest('.mkids-pf'); if (!w || !pl) return; pl[w.dataset.k] = e.target.value; H.save(); mirror(); $('#mkids-plan-saved', main).textContent = 'اتحفظ على الجهاز'; });
+    $('#mkids-print', main).addEventListener('click', function () { mirror(); window.print(); });
+    if (pl) mirror();
+  }
+
+  function vAbout(main) {
+    main.innerHTML = DEFS + crumb(null, 'عن الألعاب') + '<header class="head"><h1 class="mega" data-reveal="words">اللعب <em>شغل الطفل</em></h1><p class="lead">وهو بيلعب، الطفل بيتمرّن على إنه يفتكر، ويستنى، ويغيّر طريقته، ويلاقي النظام في الحاجات. الصفحة دي بتشرح كل لعبة بتمرّن إيه، وإيه اللي المنصة ما بتدّعيهوش.</p></header>' +
+      '<section class="mkids-why"><div class="mkids-why-t tile block lilac"><h2>ليه اللعب مهم؟</h2><p>في اللعب الطفل بيجرّب من غير خوف من الغلط: بيحاول، يغلط، ويحاول تاني. وده نفسه التمرين.</p><p>ولما كبير يلعب معاه ويساعده «على قدّ الحاجة» (يعيد، يوضّح، وبعدين يورّيه)، الطفل بيعمل مع المساعدة حاجات لسه ما يقدرش عليها لوحده. دي فكرة فيجوتسكي عن «منطقة النمو القريبة»، وعليها مبنية المساعدة المتدرجة في ألعابنا.</p></div>' +
+      '<div class="mkids-why-s tile"><h2>إزاي تلعبوا</h2><ul><li>جلسة قصيرة: من 3 لـ 5 دقايق، ولعبة واحدة تكفي.</li><li>مكان هادي والطفل مش تعبان ولا جعان.</li><li>امدح المحاولة والتركيز، مش النتيجة.</li><li>لو قال «مش عاوز»، وقفوا. الزرار موجود علشان كده.</li></ul></div></section>' +
+      '<section class="mkids-games"><h2>كل لعبة بتمرّن إيه</h2>' + ORDER.map(function (a, i) { var A = ACTS[a], C = CONS[A.cons]; return '<article class="mkids-game' + (i % 2 ? ' alt' : '') + '" data-reveal><div class="mkids-game-art mkids-tone-' + A.tone + '">' + ART[a] + '</div><div><h3>' + A.name + '</h3><p class="mkids-game-c">' + C.name + ': ' + C.plain + '.</p><p>' + A.about + '</p><p class="small muted">الأساس العلمي: ' + A.basis + '</p><p class="small"><strong>في البيت:</strong> ' + C.home[0] + '</p></div></article>'; }).join('') + '</section>' +
+      '<section class="mkids-not tile"><h2>اللي المنصة ما بتدّعيهوش</h2><ul><li>دي مش اختبارات ذكاء ولا اختبارات مقننة، ومفيش لها معايير مصرية نقارن بيها.</li><li>مفيش تشخيص. الأرقام ما تقولش إن الطفل عنده مشكلة أو ما عندوش.</li><li>مش بنقارن طفلك بأي طفل تاني، ولا بنحط له مستوى أو لقب.</li><li>الفرق بين جلسة والتانية ممكن يكون تعوّد على اللعبة، أو مزاج، أو تعب، أو جهاز مختلف، أو دوشة.</li><li>ما نقدرش نوعد إن اللعب هنا «يرفع» الذاكرة أو التركيز في المدرسة. الدليل العلمي على انتقال أثر ألعاب التدريب للحياة اليومية محدود ومختلَف عليه.</li><li>أزمنة الاستجابة على الموبايل والمتصفح مش دقيقة، وبنسجّلها كبيانات خام بس.</li></ul><p>لو عندك قلق على طفلك، كلّم أخصائي نفسي أو طبيب أطفال. المنصة ما تغنيش عن ده.</p><p class="row"><a class="btn primary" href="#kids">روح للألعاب</a></p></section>';
+  }
+
+  H.register('kids', function (main, a, b) {
+    kill(); D();
+    if (a === 'about') return vAbout(main);
+    if (!kidsList().length) return vEmpty(main);
+    var kid = a ? kidBy(a) : null;
+    if (!kid) return vPick(main);
+    if (ACTS[b]) return play(main, kid, b);
+    if (b === 'parent') return vParent(main, kid);
+    if (b === 'spec') return vSpec(main, kid);
+    if (b === 'plan') return vPlan(main, kid);
+    vJourney(main, kid);
+  });
+  window.HubKids = { makeRng: makeRng, Stair: Stair, genStars: genStars, genGng: genGng, genPattern: genPattern, flipAnswer: flipAnswer, towerMin: towerMin, median: median, describe: describe, compare: compare, csv: csv, GNG_WIN: GNG_WIN, FLIP_RUN: FLIP_RUN, STAR_POS: STAR_POS, ACTS: ACTS };
 })();
