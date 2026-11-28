@@ -592,7 +592,7 @@
   }
 
   function chart(ss, A) {
-    var W = 280, Hh = 130, L = 26, R = 8, T = 10, B = 22, max = A.max, pts = ss.map(function (s, i) { return [ss.length === 1 ? (L + (W - R)) / 2 : L + i * (W - L - R) / (ss.length - 1), T + (Hh - T - B) * (1 - s.lvl / max), s]; });
+    var W = 280, Hh = 140, L = 26, R = 12, T = 24, B = 22, max = A.max, pts = ss.map(function (s, i) { return [ss.length === 1 ? (L + (W - R)) / 2 : L + i * (W - L - R) / (ss.length - 1), T + (Hh - T - B) * (1 - s.lvl / max), s]; });
     var g = ''; for (var y = 0; y <= max; y += max > 6 ? 3 : 2) { var yy = T + (Hh - T - B) * (1 - y / max); g += '<line class="mkids-grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '"/><text class="mkids-tick" x="' + (L - 6) + '" y="' + (yy + 4) + '" text-anchor="end">' + y + '</text>'; }
     return '<svg class="mkids-chart" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="' + A.unit + ' عبر ' + ss.length + ' جلسات: ' + ss.map(function (s) { return s.lvl; }).join('، ') + '">' + g +
       (pts.length > 1 ? '<polyline class="mkids-line" points="' + pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>' : '') +
@@ -641,7 +641,7 @@
       off: C.home.join('\n'), freq: '3 مرات في الأسبوع، في أيام متفرقة', dur: 'من 10 لـ 15 دقيقة: لعبة واحدة على المنصة (3 لـ 5 دقايق) ونشاط واحد من غير شاشة',
       watch: C.watch + '\nوكمان: مزاج الطفل، التعب، الدوشة، والجهاز المستخدم في كل جلسة.', review: 'بعد 4 أسابيع (' + rev + '): نراجع الملاحظات مع ولي الأمر ونقرر نكمّل أو نعدّل.', note: '' };
   }
-  var PF = [['goal', 'الهدف', 'area'], ['tool', 'أنشطة على المنصة', 'area'], ['off', 'أنشطة من غير شاشة', 'area'], ['freq', 'التكرار', ''], ['dur', 'مدة الجلسة', ''], ['watch', 'نلاحظ إيه', 'area'], ['review', 'موعد المراجعة', ''], ['note', 'ملاحظات الأخصائي', 'area']];
+  var PF = [['goal', 'الهدف', 'area'], ['tool', 'أنشطة على المنصة', 'area'], ['off', 'أنشطة من غير شاشة', 'area'], ['freq', 'التكرار', 'area'], ['dur', 'مدة الجلسة', 'area'], ['watch', 'نلاحظ إيه', 'area'], ['review', 'موعد المراجعة', 'area'], ['note', 'ملاحظات الأخصائي', 'area']];
   function vPlan(main, kid) {
     if (gate(main, kid, 'مسودة خطة التنمية')) return;
     var d = D(), pl = d.plans[kid.id] || null;
@@ -670,7 +670,7 @@
     main.innerHTML = DEFS + crumb(null, 'عن الألعاب') + '<header class="head"><h1 class="mega" data-reveal="words">اللعب <em>شغل الطفل</em></h1><p class="lead">وهو بيلعب، الطفل بيتمرّن على إنه يفتكر، ويستنى، ويغيّر طريقته، ويلاقي النظام في الحاجات. الصفحة دي بتشرح كل لعبة بتمرّن إيه، وإيه اللي المنصة ما بتدّعيهوش.</p></header>' +
       '<section class="mkids-why"><div class="mkids-why-t tile block lilac"><h2>ليه اللعب مهم؟</h2><p>في اللعب الطفل بيجرّب من غير خوف من الغلط: بيحاول، يغلط، ويحاول تاني. وده نفسه التمرين.</p><p>ولما كبير يلعب معاه ويساعده «على قدّ الحاجة» (يعيد، يوضّح، وبعدين يورّيه)، الطفل بيعمل مع المساعدة حاجات لسه ما يقدرش عليها لوحده. دي فكرة فيجوتسكي عن «منطقة النمو القريبة»، وعليها مبنية المساعدة المتدرجة في ألعابنا.</p></div>' +
       '<div class="mkids-why-s tile"><h2>إزاي تلعبوا</h2><ul><li>جلسة قصيرة: من 3 لـ 5 دقايق، ولعبة واحدة تكفي.</li><li>مكان هادي والطفل مش تعبان ولا جعان.</li><li>امدح المحاولة والتركيز، مش النتيجة.</li><li>لو قال «مش عاوز»، وقفوا. الزرار موجود علشان كده.</li></ul></div></section>' +
-      '<section class="mkids-games"><h2>كل لعبة بتمرّن إيه</h2>' + ORDER.map(function (a, i) { var A = ACTS[a], C = CONS[A.cons]; return '<article class="mkids-game' + (i % 2 ? ' alt' : '') + '" data-reveal><div class="mkids-game-art mkids-tone-' + A.tone + '">' + ART[a] + '</div><div><h3>' + A.name + '</h3><p class="mkids-game-c">' + C.name + ': ' + C.plain + '.</p><p>' + A.about + '</p><p class="small muted">الأساس العلمي: ' + A.basis + '</p><p class="small"><strong>في البيت:</strong> ' + C.home[0] + '</p></div></article>'; }).join('') + '</section>' +
+      '<section class="mkids-games"><h2>كل لعبة بتمرّن إيه</h2>' + ORDER.map(function (a, i) { var A = ACTS[a], C = CONS[A.cons]; return '<article class="mkids-game' + (i % 2 ? ' alt' : '') + '"><div class="mkids-game-art mkids-tone-' + A.tone + '">' + ART[a] + '</div><div><h3>' + A.name + '</h3><p class="mkids-game-c">' + C.name + ': ' + C.plain + '.</p><p>' + A.about + '</p><p class="small muted">الأساس العلمي: ' + A.basis + '</p><p class="small"><strong>في البيت:</strong> ' + C.home[0] + '</p></div></article>'; }).join('') + '</section>' +
       '<section class="mkids-not tile"><h2>اللي المنصة ما بتدّعيهوش</h2><ul><li>دي مش اختبارات ذكاء ولا اختبارات مقننة، ومفيش لها معايير مصرية نقارن بيها.</li><li>مفيش تشخيص. الأرقام ما تقولش إن الطفل عنده مشكلة أو ما عندوش.</li><li>مش بنقارن طفلك بأي طفل تاني، ولا بنحط له مستوى أو لقب.</li><li>الفرق بين جلسة والتانية ممكن يكون تعوّد على اللعبة، أو مزاج، أو تعب، أو جهاز مختلف، أو دوشة.</li><li>ما نقدرش نوعد إن اللعب هنا «يرفع» الذاكرة أو التركيز في المدرسة. الدليل العلمي على انتقال أثر ألعاب التدريب للحياة اليومية محدود ومختلَف عليه.</li><li>أزمنة الاستجابة على الموبايل والمتصفح مش دقيقة، وبنسجّلها كبيانات خام بس.</li></ul><p>لو عندك قلق على طفلك، كلّم أخصائي نفسي أو طبيب أطفال. المنصة ما تغنيش عن ده.</p><p class="row"><a class="btn primary" href="#kids">روح للألعاب</a></p></section>';
   }
 
