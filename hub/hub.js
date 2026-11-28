@@ -100,7 +100,7 @@
      A section file calls Hub.register(name, function (main, a, b) { ... }). Flip `ready` once the file ships. */
   var MODS = {
     theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: true },
-    kids: { title: 'ألعاب وأنشطة الأطفال', short: 'الألعاب', say: 'ذاكرة، انتباه، استدلال، مرونة، إبداع', roles: ['parent', 'specialist'], ready: false },
+    kids: { title: 'ألعاب وأنشطة الأطفال', short: 'الألعاب', say: 'ذاكرة، انتباه، استدلال، مرونة، إبداع', roles: ['parent', 'specialist'], ready: true },
     decide: { title: 'بحوث العمليات والقرار', short: 'القرار', say: 'توزيع العينة، الميزانية مقابل القوة، مقارنة البدائل', roles: ['researcher', 'student', 'specialist'], ready: true },
     explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: true },
     cases: { title: 'محاكي الأخصائي', short: 'الحالات', say: 'احكي الحالة، وخد فروض وخطة تتأكد بيها', roles: ['specialist'], ready: false },
@@ -404,8 +404,8 @@
   function kidsTile(r) {
     var k = S.kids[0], more = S.kids.length - 1, title = r === 'specialist' ? 'الأطفال اللي بتابعهم' : 'أولادي';
     return '<section class="tile block mint kid' + (k ? '' : ' empty') + '" data-d="260"><div class="kid-txt"><h2 class="block-label">' + title + '</h2>' +
-      (k ? '<p class="kid-name">' + esc(k.child) + '</p><p class="kid-grade">' + esc(k.grade) + (more > 0 ? ' · و' + plural(more, 'طفل كمان', 'طفلين كمان', 'أطفال كمان', 'طفل كمان') : '') + '</p><p class="kid-soon">الأنشطة قريباً</p><a class="btn inked" href="#family">افتح المتابعة</a>'
-        : '<p class="kid-name small-name">سجّل طفلك</p><p class="kid-grade">من أولى لسادسة ابتدائي، بموافقة ولي الأمر.</p><p class="kid-soon">الأنشطة قريباً</p><a class="btn inked" href="#family">ابدأ التسجيل</a>') +
+      (k ? '<p class="kid-name">' + esc(k.child) + '</p><p class="kid-grade">' + esc(k.grade) + (more > 0 ? ' · و' + plural(more, 'طفل كمان', 'طفلين كمان', 'أطفال كمان', 'طفل كمان') : '') + '</p><a class="btn inked" href="#kids">افتح الأنشطة</a>'
+        : '<p class="kid-name small-name">سجّل طفلك</p><p class="kid-grade">من أولى لسادسة ابتدائي، بموافقة ولي الأمر.</p><a class="btn inked" href="#family">ابدأ التسجيل</a>') +
       '</div>' + TOYS + '</section>';
   }
   var LAB_ART = {
@@ -479,7 +479,7 @@
       t = 'من القدرة <em>للإنجاز</em>'; lead = 'لسه ما اخترتش دورك. اختاره علشان نرتّب لك الأقسام اللي تهمك.';
     } else if (r === 'parent') {
       t = S.kids.length ? 'متابعة <em>' + (S.kids.length === 1 ? esc(S.kids[0].child) : 'أولادك') + '</em>' : 'سجّل طفلك <em>علشان تبدأ</em>';
-      lead = S.kids.length ? 'مسجّل عندك ' + plural(S.kids.length, 'طفل واحد', 'طفلين', 'أطفال', 'طفل') + '. الأنشطة لسه بنجهّزها.' : 'التسجيل بياخد دقيقة، وبموافقة ولي الأمر.';
+      lead = S.kids.length ? 'مسجّل عندك ' + plural(S.kids.length, 'طفل واحد', 'طفلين', 'أطفال', 'طفل') + '. افتح الأنشطة وابدأ جلسة قصيرة.' : 'التسجيل بياخد دقيقة، وبموافقة ولي الأمر.';
     } else if (p) {
       var left = STEPS.length - progress(p);
       t = left ? 'فاضل لك <em class="num">' + plural(left, 'جزء واحد', 'جزئين', 'أجزاء', 'جزء') + '</em> وتكمّل خطة بحثك' : 'خطة بحثك <em>اكتملت</em>';
@@ -994,7 +994,7 @@
   V.family = function () {
     var h = '<header class="head"><h1>' + (S.role === 'specialist' ? 'الأطفال اللي بتابعهم' : 'أولادي') + '</h1></header>';
     if (S.kids.length) h += '<div class="kids">' + S.kids.map(function (k) {
-      return '<div class="kid-card"><span class="kid-av" aria-hidden="true">' + esc(String(k.child || '').trim().charAt(0)) + '</span><div><h2>' + esc(k.child) + '</h2><p class="kid-meta"><span class="num">' + esc(k.age) + '</span> سنين · ' + esc(k.grade) + '</p><p class="small kid-consent">موافقة ولي الأمر: ' + esc(k.guardian) + ' · ' + fmtDate(k.date) + '</p><span class="tag soon-tag">الأنشطة قريباً</span></div></div>';
+      return '<div class="kid-card"><span class="kid-av" aria-hidden="true">' + esc(String(k.child || '').trim().charAt(0)) + '</span><div><h2>' + esc(k.child) + '</h2><p class="kid-meta"><span class="num">' + esc(k.age) + '</span> سنين · ' + esc(k.grade) + '</p><p class="small kid-consent">موافقة ولي الأمر: ' + esc(k.guardian) + ' · ' + fmtDate(k.date) + '</p><a class="btn" href="#kids">افتح الأنشطة</a></div></div>';
     }).join('') + '</div>';
     h += '<div class="sec"><h2>تسجيل طفل</h2></div><form class="card form" id="kf" novalidate>' +
       '<p class="notice">الأنشطة هنا للتنمية والمتابعة. مش اختبار ذكاء ولا تشخيص، ونتايجها مينفعش يتبني عليها قرار مصيري عن الطفل.</p><div class="two">' +
@@ -1021,7 +1021,7 @@
     if (window.HubMotion) window.HubMotion.stop();
     touch.after = null;
     document.body.classList.remove('is-intro');
-    document.body.classList.toggle('on-assistant', r === 'assistant');
+    document.body.classList.toggle('on-assistant', r === 'assistant' || r === 'kids');
     if (MODS[r]) modView(r, parts[1], parts[2]); else V[r](parts[1], parts[2]);
     drawNav(r === 'project' ? 'projects' : r);
     document.title = BRAND + ' — منصة البحث وتنمية القدرات';
