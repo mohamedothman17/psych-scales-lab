@@ -333,7 +333,7 @@
         '<div class="mexplore-pbody"><h3 dir="auto">' + (p.title ? esc(p.title) : '<span class="muted">[بدون عنوان في الفهرس]</span>') + '</h3>' +
         '<p class="mexplore-meta" dir="auto">' + metaLine(p) + '</p>' + flags(p) +
         '<div class="mexplore-acts"><button class="btn ghost" type="button" data-act="abs" aria-expanded="' + open + '" aria-controls="mx-abs-' + i + '">الملخص</button>' +
-        '<button class="btn" type="button" data-act="save"' + (sv ? ' disabled' : '') + '>' + (sv ? H.ic('check') + 'في قايمتك' : H.ic('plus') + 'احفظ في قايمة القراءة') + '</button>' + doiLink(p) + '</div>' +
+        '<button class="btn" type="button" data-act="save"' + (sv ? ' disabled' : '') + '>' + (sv ? H.ic('check') + 'في قايمتك' : H.ic('plus') + 'احفظ للقراءة') + '</button>' + doiLink(p) + '</div>' +
         '<div class="mexplore-abs" id="mx-abs-' + i + '"' + (open ? '' : ' hidden') + '>' + (p.abs ? '<p dir="auto">' + esc(p.abs) + '</p><p class="small muted">الملخص متركّب من فهرس الكلمات في OpenAlex، فممكن الترقيم يختلف شوية عن الأصل.</p>' : '<p class="muted">الفهرس مفيهوش ملخص للبحث ده. افتح الرابط واقراه من المصدر.</p>') + '</div></div></li>';
     }).join('') + '</ol>';
     if (pages > 1) h += '<nav class="mexplore-pager" aria-label="صفحات النتايج"><button class="btn" type="button" data-act="prev"' + (r.page <= 1 ? ' disabled' : '') + '>' + H.ic('back') + 'السابق</button><span class="num">صفحة ' + r.page + ' من ' + nfmt(pages) + '</span><button class="btn" type="button" data-act="next"' + (r.page >= pages ? ' disabled' : '') + '>التالي' + H.ic('fwd') + '</button></nav>';
@@ -379,17 +379,17 @@
   function chart(years) {
     var hi = years[years.length - 1].y, lo = Math.max(years[0].y, hi - 39), before = 0, map = {}, max = 0, total = 0, y;
     years.forEach(function (g) { total += g.n; if (g.y < lo) before += g.n; else { map[g.y] = g.n; if (g.n > max) max = g.n; } });
-    var n = hi - lo + 1, W = 320, Hh = 132, top = 14, base = 108, bw = W / n, peak = lo;
+    var n = Math.max(hi - lo + 1, 12), W = 320, Hh = 132, top = 14, base = 108, bw = W / n, peak = lo;
     for (y = lo; y <= hi; y++) if ((map[y] || 0) === max) peak = y;
     var s = '<svg class="mexplore-chart" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="عدد الأبحاث المفهرسة في كل سنة من ' + lo + ' لحد ' + hi + '. الأعلى سنة ' + peak + ' بعدد ' + max + '.">' +
       '<line class="mexplore-axis" x1="0" x2="' + W + '" y1="' + base + '" y2="' + base + '"/>';
     for (y = lo; y <= hi; y++) {
-      var v = map[y] || 0, bh = v ? Math.max(1.5, (v / max) * (base - top)) : 0, x = (hi - y) * bw; /* newest on the left: time runs right to left like the page */
+      var v = map[y] || 0, bh = v ? Math.max(1.5, (v / max) * (base - top)) : 0, x = (y - lo) * bw;
       if (v) s += '<rect class="mexplore-bar' + (y === peak ? ' peak' : '') + '" x="' + (x + bw * 0.14).toFixed(2) + '" y="' + (base - bh).toFixed(2) + '" width="' + (bw * 0.72).toFixed(2) + '" height="' + bh.toFixed(2) + '" rx="' + Math.min(2, bw * 0.3).toFixed(2) + '"><title>' + y + ': ' + nfmt(v) + '</title></rect>';
     }
-    var px = (hi - peak) * bw + bw / 2;
-    s += '<text class="mexplore-ct peak" x="' + Math.min(W - 16, Math.max(16, px)).toFixed(1) + '" y="9" text-anchor="middle">' + nfmt(max) + '</text>' +
-      '<text class="mexplore-ct" x="' + (W - 1) + '" y="126" text-anchor="start" direction="ltr">' + lo + '</text><text class="mexplore-ct" x="1" y="126" text-anchor="end" direction="ltr">' + hi + '</text></svg>';
+    var px = (peak - lo) * bw + bw / 2;
+    s += '<text class="mexplore-ct peak" direction="ltr" x="' + Math.min(W - 16, Math.max(16, px)).toFixed(1) + '" y="9" text-anchor="middle">' + nfmt(max) + '</text>' +
+      '<text class="mexplore-ct" x="0" y="126" text-anchor="start" direction="ltr">' + lo + '</text><text class="mexplore-ct" x="' + W + '" y="126" text-anchor="end" direction="ltr">' + hi + '</text></svg>';
     return { svg: s, total: total, before: before, lo: lo, hi: hi, peak: peak, max: max, map: map };
   }
   function drawSide() {
@@ -694,13 +694,13 @@
       '<p class="row"><button class="btn primary" type="submit">' + (ed ? 'احفظ التعديل' : 'أضِف للمسودة') + '</button>' + (ed ? '<button class="btn" type="button" id="mo-cancel">إلغاء</button>' : '') + '</p></form>' +
       '<div class="mexplore-mside"><section class="tile block mint"><p class="block-label">المسودة على جهازك</p><p class="mexplore-sum"><strong class="num" id="mx-dcount">' + W.length + '</strong><span> ' + (W.length === 1 ? 'فرصة' : 'فرصة') + '</span></p><p>الملف المنشور دلوقتي فيه <span class="num">' + b.all.length + '</span>' + (b.bad ? '، و<span class="num">' + b.bad + '</span> عنصر مرفوض لأنه ناقص أو غلط' : '') + '.</p>' +
       '<p class="row"><button class="btn inked" type="button" id="mx-export">' + H.ic('download') + 'نزّل opportunities.json</button></p><p class="small">بعد التنزيل: ارفع الملف مكان <bdi dir="ltr">hub/data/opportunities.json</bdi> في المستودع. الفرص اللي ميعادها فات بتتشال من الملف المُصدَّر.</p>' +
-      '<p><button class="btn ghost" type="button" id="mx-reset">ابدأ من الملف المنشور</button></p></section>' +
+      '<p><button class="btn onblock" type="button" id="mx-reset">ابدأ من الملف المنشور</button></p></section>' +
       '<section class="mexplore-soon"><h2>محتاجة مراجعة قريب</h2>' + (soon.length ? '<ul>' + soon.map(function (o) {
         var age = days(o.verified, t), leftV = FRESH_DAYS - age;
-        return '<li><strong dir="auto">' + esc(o.title) + '</strong><span class="small">' + (leftV < 0 ? 'مستخبية من اللوحة: مراجعتها من <span class="num">' + age + '</span> يوم' : 'هتختفي بعد <span class="num">' + leftV + '</span> يوم لو متراجعتش') + '</span></li>';
+        return '<li><strong dir="auto">' + esc(o.title) + '</strong><span class="small">' + (age < 0 ? 'مستخبية: تاريخ مراجعتها في المستقبل، وده غلط في الملف' : leftV < 0 ? 'مستخبية من اللوحة: مراجعتها من <span class="num">' + age + '</span> يوم' : leftV === 0 ? 'النهارده آخر يوم تظهر فيه لو متراجعتش' : 'هتختفي بعد <span class="num">' + leftV + '</span> يوم لو متراجعتش') + '</span></li>';
       }).join('') + '</ul>' : '<p class="muted">مفيش حاجة هتختفي في السبع أيام الجاية.</p>') + (past.length ? '<p class="small"><span class="num">' + past.length + '</span> ميعادها فات وهتتشال عند التصدير.</p>' : '') + '</section></div></div>' +
       '<section class="mexplore-dlist"><h2>كل عناصر المسودة</h2>' + (W.length ? '<ul>' + W.slice().sort(function (x, y) { return x.deadline < y.deadline ? -1 : 1; }).map(function (o) {
-        var st = o.deadline < t ? ['late', 'الميعاد فات'] : !fresh(o, t) ? ['stale', 'مستخبية: محتاجة مراجعة'] : ['live', 'ظاهرة على اللوحة بعد النشر'];
+        var st = o.deadline < t ? ['late', 'الميعاد فات'] : o.verified > t ? ['stale', 'مستخبية: تاريخ المراجعة في المستقبل'] : !fresh(o, t) ? ['stale', 'مستخبية: محتاجة مراجعة'] : ['live', 'ظاهرة على اللوحة بعد النشر'];
         return '<li data-id="' + esc(o.id) + '"><div><h3 dir="auto">' + esc(o.title) + '</h3><p class="mexplore-meta">' + esc(label(OTYPES, o.type)) + ' <span aria-hidden="true">·</span> آخر ميعاد ' + fdate(o.deadline) + ' <span aria-hidden="true">·</span> اتراجعت يوم ' + fdate(o.verified) + '</p><p class="mexplore-st ' + st[0] + '">' + st[1] + '</p></div>' +
           '<div class="row"><a class="btn ghost" href="' + esc(o.url) + '" target="_blank" rel="noopener noreferrer">' + ic('out') + 'افتح الرسمي</a><button class="btn" type="button" data-act="bump"' + (o.deadline < t || o.verified === t ? ' disabled' : '') + '>' + H.ic('check') + (o.verified === t ? 'اتراجعت النهارده' : 'راجِع تاني') + '</button><button class="btn ghost" type="button" data-act="edit">عدّل</button><button class="btn icon" type="button" data-act="del" aria-label="امسح «' + esc(o.title) + '»">' + H.ic('trash') + '</button></div></li>';
       }).join('') + '</ul>' : '<p class="muted">المسودة فاضية، زي الملف المنشور.</p>') + '</section>';
