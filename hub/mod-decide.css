@@ -42,7 +42,7 @@
 
 /* ---------- tool page ---------- */
 .mdc-thead{display:flex;gap:20px;align-items:flex-start}
-.mdc-thead .mdc-no{font-size:clamp(3rem,2rem + 4vw,5.6rem);color:transparent;-webkit-text-stroke:2px var(--ink-3);letter-spacing:0;margin-top:.08em}
+.mdc-thead .mdc-no{font-size:clamp(3rem,2rem + 4vw,5.6rem);color:var(--ink-3);font-weight:300;letter-spacing:0;margin-top:.02em;padding-inline-end:20px;border-inline-end:3px solid var(--accent)}
 .mdc-thead h1{font-size:clamp(1.8rem,1.1rem + 2.6vw,3.2rem);font-weight:800;line-height:1.3}
 .mdc-explain{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 28px;border-radius:32px 32px 32px 10px;margin-bottom:22px}
 .mdc-explain .mdc-glyph{width:92px;grid-row:span 2;align-self:start}
@@ -116,7 +116,8 @@
 .mdc-table tfoot tr:first-child th,.mdc-table tfoot tr:first-child td{border-top:2px solid var(--ink)}
 .mdc-nh b{display:inline-block;min-width:3.2ch}
 .mdc-mini{display:inline-block;vertical-align:middle;width:64px;height:8px;margin-inline-start:8px;border-radius:8px;background:var(--surface-2);overflow:hidden}
-.mdc-mini i{display:block;height:100%;width:var(--w,0%);background:var(--brand);border-radius:8px}
+.mdc-mini i{display:block;height:100%;width:var(--w,0%);background:var(--brand);border-radius:8px;margin-inline-end:auto}
+[dir=rtl] .mdc-mini i{margin-left:auto}
 
 /* results */
 .mdc-out{position:sticky;top:18px}
@@ -139,7 +140,8 @@
 .mdc-bar-l b{display:inline-grid;place-items:center;width:1.7em;height:1.7em;margin-inline-end:8px;border-radius:50%;border:1.5px solid var(--ink-3);font-size:.82rem}
 .mdc-bars .top .mdc-bar-l b{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .mdc-bar-t{height:14px;border-radius:4px 14px 14px 4px;background:var(--surface-2);overflow:hidden}
-.mdc-bar-t i{display:block;height:100%;width:var(--w,0%);border-radius:inherit;background:var(--brand);transform-origin:right}
+.mdc-bar-t i{display:block;height:100%;width:var(--w,0%);border-radius:inherit;background:var(--brand);transform-origin:right;margin-inline-end:auto}
+[dir=rtl] .mdc-bar-t i{margin-left:auto;margin-right:0}
 .mdc-bars .top .mdc-bar-t i{background:var(--status-fill)}
 .mdc-bar-v{font-weight:700;min-width:3.6em;text-align:end}
 .mdc-cr{list-style:none;margin:10px 0 0;padding:0}
@@ -245,6 +247,10 @@
   .mdc-pv{grid-row:3}
   .mdc-rows .mdc-glyph{display:none}
   .mdc-hero{padding:22px}
+  .mdc-chart .tick{font-size:21px}
+  .mdc-chart .lab,.mdc-chart .mlab{font-size:22px}
+  .ser{stroke-width:4.5}
+  .mdc-thead .mdc-no{padding-inline-end:12px}
 }
 @media (prefers-reduced-motion:no-preference){
   .mdc-bar-t i{animation:mdc-grow .7s cubic-bezier(.16,1,.3,1) backwards;animation-delay:calc(var(--i,0) * 60ms)}
@@ -260,3 +266,4 @@
   .mdc-hero-v,.mdc-hero-k,.mdc-hero-s,.mdc-hero-v small{color:#000}
   .mdc-model[open]{break-inside:avoid}
 }
+.mdc-grid-s td:last-child{white-space:nowrap}

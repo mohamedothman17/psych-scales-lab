@@ -47,15 +47,15 @@
   var DASH = ['', '7 4', '2 4', '10 3 2 3', '1 5', '12 4'];
   /* o: {x0,x1,y0,y1,xl,yl,series:[{name,pts:[[x,y]]}],vmarks:[{x,label}],hmarks:[{y,label}],xfmt,yfmt,label} */
   function chart(o) {
-    var W = 640, Ht = 320, L = 52, R = 18, T = 18, B = 48, pw = W - L - R, ph = Ht - T - B, g = '', i;
+    var W = 640, Ht = 340, L = 64, R = 22, T = 22, B = 60, pw = W - L - R, ph = Ht - T - B, g = '', i;
     function sx(x) { return L + (x - o.x0) / ((o.x1 - o.x0) || 1) * pw; } function sy(y) { return T + (1 - (y - o.y0) / ((o.y1 - o.y0) || 1)) * ph; }
     var xf = o.xfmt || function (v) { return fx(v, 2); }, yf = o.yfmt || function (v) { return fx(v, 2); };
     for (i = 0; i <= 4; i++) { var yv = o.y0 + (o.y1 - o.y0) * i / 4, yy = sy(yv); g += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/><text class="tick" x="' + (L - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end">' + yf(yv) + '</text>'; }
-    for (i = 0; i <= 4; i++) { var xv = o.x0 + (o.x1 - o.x0) * i / 4, xx = sx(xv); g += '<text class="tick" x="' + xx.toFixed(1) + '" y="' + (Ht - B + 18) + '" text-anchor="middle">' + xf(xv) + '</text>'; }
+    for (i = 0; i <= 4; i++) { var xv = o.x0 + (o.x1 - o.x0) * i / 4, xx = sx(xv); g += '<text class="tick" x="' + xx.toFixed(1) + '" y="' + (Ht - B + 22) + '" text-anchor="middle">' + xf(xv) + '</text>'; }
     g += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + (Ht - B) + '" y2="' + (Ht - B) + '"/>';
     g += '<text class="lab" x="' + (L + pw / 2) + '" y="' + (Ht - 8) + '" text-anchor="middle">' + esc(o.xl || '') + '</text>';
     (o.hmarks || []).forEach(function (m) { if (m.y < o.y0 || m.y > o.y1) return; var y = sy(m.y).toFixed(1); g += '<line class="mark" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text class="mlab" x="' + (W - R - 4) + '" y="' + (y - 6) + '" text-anchor="end">' + esc(m.label) + '</text>'; });
-    (o.vmarks || []).forEach(function (m, k) { if (m.x < o.x0 || m.x > o.x1) return; var x = sx(m.x), right = x > L + pw * 0.6; g += '<line class="mark v' + (m.cls ? ' ' + m.cls : '') + '" x1="' + x.toFixed(1) + '" x2="' + x.toFixed(1) + '" y1="' + T + '" y2="' + (Ht - B) + '"/><text class="mlab" x="' + (x + (right ? -6 : 6)).toFixed(1) + '" y="' + (T + 12 + k * 16) + '" text-anchor="' + (right ? 'end' : 'start') + '">' + esc(m.label) + '</text>'; });
+    (o.vmarks || []).forEach(function (m, k) { if (m.x < o.x0 || m.x > o.x1) return; var x = sx(m.x), right = x > L + pw * 0.6; g += '<line class="mark v' + (m.cls ? ' ' + m.cls : '') + '" x1="' + x.toFixed(1) + '" x2="' + x.toFixed(1) + '" y1="' + T + '" y2="' + (Ht - B) + '"/><text class="mlab" x="' + (x + (right ? -6 : 6)).toFixed(1) + '" y="' + (T + 14 + k * 24) + '" text-anchor="' + (right ? 'end' : 'start') + '">' + esc(m.label) + '</text>'; });
     o.series.forEach(function (s, k) {
       var d = s.pts.map(function (p, j) { return (j ? 'L' : 'M') + sx(p[0]).toFixed(1) + ' ' + sy(Math.max(o.y0, Math.min(o.y1, p[1]))).toFixed(1); }).join('');
       g += '<path class="ser s' + (k % 6) + '" d="' + d + '"' + (DASH[k % 6] ? ' stroke-dasharray="' + DASH[k % 6] + '"' : '') + '/>';
