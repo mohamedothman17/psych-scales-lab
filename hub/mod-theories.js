@@ -3,9 +3,9 @@
 (function () {
   'use strict';
   var H = window.Hub, esc = H.esc, $ = H.$, $$ = H.$$;
-  var FILES = ['data/theories.js', 'data/theories-2.js', 'data/theories-extra.js'];
+  var FILES = ['data/theories.js', 'data/theories-2.js', 'data/theories-extra.js', 'data/theories-refs.js'];
   var T = null, BY = {}, ORDER = [], loading = null;
-  var filt = { fam: '', ev: '', q: '' }, mapSt = { skill: '', q: '' }, editing = {}, drafts = {};
+  var filt = { fam: '', ev: '', q: '', recent: false }, mapSt = { skill: '', q: '' }, editing = {}, drafts = {};
 
   var SHORT = { piaget: 'بياجيه', vygotsky: 'فيجوتسكي', erikson: 'إريكسون', bronfenbrenner: 'النظم البيئية', attachment: 'التعلّق', bandura: 'باندورا',
     infoproc: 'معالجة المعلومات', baddeley: 'الذاكرة العاملة', ef: 'الوظائف التنفيذية', cogload: 'الحمل المعرفي', sdt: 'تقرير المصير', srl: 'التنظيم الذاتي',
@@ -28,7 +28,7 @@
     function end() {
       if (--left) return;
       var q = loading; loading = null;
-      if (!bad && window.HubTheories && window.HubTheories.models && window.HubTheories.list.length) index(window.HubTheories);
+      if (!bad && window.HubTheories && window.HubTheories.models && window.HubTheories.refs && window.HubTheories.list.length) index(window.HubTheories);
       q.forEach(function (f) { f(!!T); });
     }
     FILES.forEach(function (src) {
@@ -40,7 +40,11 @@
   function index(data) {
     T = data; BY = {}; ORDER = [];
     T.families.forEach(function (f) { T.list.forEach(function (t) { if (t.family === f.id) ORDER.push(t); }); });
-    ORDER.forEach(function (t, i) { t.no = (i < 9 ? '0' : '') + (i + 1); BY[t.id] = t; });
+    ORDER.forEach(function (t, i) {
+      t.no = (i < 9 ? '0' : '') + (i + 1); BY[t.id] = t;
+      if (T.refs[t.id]) t.refs = T.refs[t.id];
+      t.recent = (T.recent && T.recent[t.id]) || [];
+    });
   }
   function store() {
     var d = H.data('theories');
@@ -97,6 +101,7 @@
   function matches(t) {
     if (filt.fam && t.family !== filt.fam) return false;
     if (filt.ev && t.evidence.status !== filt.ev) return false;
+    if (filt.recent && !t.recent.some(function (e) { return +e.year > 2018; })) return false;
     if (filt.q) { var q = norm(filt.q); if (q && norm(t.title.ar + ' ' + t.title.en + ' ' + t.theorists.join(' ') + ' ' + SHORT[t.id]).indexOf(q) < 0) return false; }
     return true;
   }
@@ -118,6 +123,7 @@
       chipSet('fam', [['', 'الكل']].concat(T.families.map(function (f) { return [f.id, f.id]; })), filt.fam) + '</div>' +
       '<div class="mth-fgroup" role="group" aria-label="قوة الدليل"><span class="mth-flabel">قوة الدليل</span>' +
       chipSet('ev', [['', 'الكل']].concat(T.evidence.map(function (e) { return [e.id, e.id, rings(e.level)]; })), filt.ev) + '</div>' +
+      '<div class="mth-fgroup" role="group" aria-label="الأدلة الحديثة"><span class="mth-flabel">الأدلة الحديثة</span><div class="mth-chips"><button type="button" id="mth-recent" aria-pressed="' + filt.recent + '"><span>فيها أدلة بعد 2018</span></button></div></div>' +
       '<p class="mth-count" id="mth-count" role="status"></p></section>';
     T.families.forEach(function (f, i) {
       var list = ORDER.filter(function (t) { return t.family === f.id; });
@@ -142,12 +148,14 @@
       $$('.mth-chart .link', main).forEach(function (l) { l.classList.toggle('dim', !(matches(BY[l.getAttribute('data-a')]) && matches(BY[l.getAttribute('data-b')]))); });
       $('#mth-count', main).textContent = shown === n ? 'كل النظريات ظاهرة: ' + n : 'ظاهر ' + shown + ' من ' + n;
       $('#mth-none', main).hidden = shown > 0;
-      $$('.mth-chips button', main).forEach(function (b) { b.setAttribute('aria-pressed', String(filt[b.getAttribute('data-g')] === b.getAttribute('data-v'))); });
+      $$('.mth-chips button[data-g]', main).forEach(function (b) { b.setAttribute('aria-pressed', String(filt[b.getAttribute('data-g')] === b.getAttribute('data-v'))); });
+      $('#mth-recent', main).setAttribute('aria-pressed', String(filt.recent));
     }
     main.addEventListener('click', function (e) {
       var b = e.target.closest && e.target.closest('.mth-chips button');
-      if (b && main.contains(b) && filt.hasOwnProperty(b.getAttribute('data-g'))) { filt[b.getAttribute('data-g')] = b.getAttribute('data-v'); apply(); }
-      if (e.target.id === 'mth-clear') { filt.fam = filt.ev = filt.q = ''; $('#mth-q', main).value = ''; apply(); $('#mth-q', main).focus(); }
+      if (b && b.id === 'mth-recent') { filt.recent = !filt.recent; apply(); return; }
+      if (b && main.contains(b) && b.hasAttribute('data-g') && filt.hasOwnProperty(b.getAttribute('data-g'))) { filt[b.getAttribute('data-g')] = b.getAttribute('data-v'); apply(); }
+      if (e.target.id === 'mth-clear') { filt.fam = filt.ev = filt.q = ''; filt.recent = false; $('#mth-q', main).value = ''; apply(); $('#mth-q', main).focus(); }
     });
     $('#mth-q', main).addEventListener('input', function () { filt.q = this.value; apply(); });
     apply();
@@ -180,12 +188,33 @@
     var o = BY[id]; if (!o) return '';
     return '<li><a href="#theories/t/' + o.id + '"><span class="num">' + o.no + '</span><strong>' + esc(o.title.ar) + '</strong>' + (note ? '<small>' + note + '</small>' : '') + H.ic('fwd') + '</a></li>';
   }
+  function fmtDay(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : String(iso || ''); }
+  function safeUrl(u) { return /^https:\/\/[^\s"'<>]+$/.test(String(u || '')) ? u : ''; }
+  function ext(u, label) { u = safeUrl(u); return u ? '<a class="mth-ext" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + label + '<span class="sr"> (بيفتح في صفحة جديدة)</span></a>' : ''; }
+  function recentHtml(t) {
+    if (!t.recent.length) return '';
+    return '<section class="mth-sec mth-recent" id="mth-recent-sec"><h2>أحدث الأدلة</h2><p class="muted">دراسات من آخر عشر سنين تقريباً، ملخّصة من ملخص كل دراسة مش من نصها الكامل. اقرا الأصل قبل ما تبني عليها.</p><ol>' + t.recent.map(function (e) {
+      return '<li><p class="mth-rk"><span class="mth-kind">' + esc(e.kind) + '</span><span class="num">' + esc(e.year) + '</span>' + (e.arab ? '<span class="mth-arab">عيّنة عربية</span>' : '') + '</p>' +
+        '<p class="mth-rf">' + esc(e.finding) + '</p><p class="mth-rc"><span dir="ltr" lang="en"><bdi>' + esc(e.authors) + '</bdi> (' + esc(e.year) + '). <cite>' + esc(e.title) + '</cite>. ' + esc(e.venue) + '.</span> ' +
+        ext(e.url, 'افتح صفحة الدراسة') + '</p></li>';
+    }).join('') + '</ol></section>';
+  }
+  function refsHtml(t) {
+    var ok = t.refs.filter(function (r) { return r.verified; }).length, n = t.refs.length;
+    return '<section class="mth-sec mth-refs"><h2>المراجع الأساسية</h2><p class="mth-refcount' + (ok === n ? ' all' : '') + '" id="mth-refcount" role="note">' + H.ic(ok === n ? 'check' : 'clock') +
+      '<span><b class="num">' + ok + '</b> من <b class="num">' + n + '</b> مراجع متراجعة' + (ok < n ? '. الباقي لسه متراجعش: اتأكد منه بنفسك قبل ما تستشهد بيه.' : '.') + '</span></p><ul>' +
+      t.refs.map(function (r) {
+        return '<li><span dir="ltr" lang="en"><bdi>' + esc(r.authors) + '</bdi> (' + esc(r.year) + '). <cite>' + esc(r.title) + '</cite>.</span>' + (r.venue ? '<span class="mth-venue" dir="auto">' + esc(r.venue) + '</span>' : '') +
+          (r.doi ? ' <span class="mth-doi" dir="ltr">doi:' + esc(r.doi) + '</span>' : '') +
+          '<p class="mth-rstate">' + (r.verified ? '<span class="mth-okv">متراجَع بتاريخ <span class="num" dir="ltr">' + esc(fmtDay(r.checkedOn)) + '</span></span>' : '<span class="mth-unv">لسه متراجعش</span>') +
+          ext(r.url, 'المصدر اللي راجعنا منه') + '</p>' + (r.note ? '<p class="mth-rnote">' + esc(r.note) + '</p>' : '') + '</li>';
+      }).join('') + '</ul><details class="mth-howchk"><summary>إزاي راجعنا المراجع؟</summary><p>قارنّا كل مرجع بنتايج بحث ظهرت لنا بتاريخ <span class="num" dir="ltr">' + esc(fmtDay(T.checked)) + '</span> (فهارس مكتبات، صفحات ناشرين، PubMed، ومحرك بحث الأوراق العلمية Consensus) من حيث العنوان والمؤلف والسنة وجهة النشر. رقم DOI مكتوب بس لو ظهر في نتيجة البحث لنفس العمل. إحنا ما قريناش النصوص الكاملة، فلازم ترجع للأصل وتقراه قبل ما تستشهد بيه.</p></details></section>';
+  }
   function ul(list) { return '<ul class="mth-ul">' + list.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
   function theory(main, id) {
     var t = BY[id];
     if (!t) { main.innerHTML = subnav('') + '<header class="head"><h1>النظرية دي مش موجودة</h1><p class="lead">ممكن الرابط يكون اتغيّر.</p><p><a class="btn primary" href="#theories">ارجع للمكتبة</a></p></header>'; return; }
     var f = fam(t.family), e = ev(t.evidence.status), i = ORDER.indexOf(t), prev = ORDER[i - 1], next = ORDER[i + 1];
-    var unverified = t.refs.some(function (r) { return !r.verified; });
     var h = subnav('') + '<article class="mth-page">' +
       '<div class="mth-hero"><header class="block ' + f.tone + ' mth-title"><p class="block-label"><span class="num">' + t.no + '</span> · عيلة ' + esc(f.id) + '</p>' +
       '<h1>' + esc(t.title.ar) + '</h1><p class="mth-en">' + ltr(t.title.en) + '</p>' +
@@ -208,8 +237,7 @@
     h += '<section class="mth-sec mth-rel"><h2>نظريات قريبة ونظريات بتختلف معاها</h2><div class="mth-two">' +
       '<div><h3>قريبة أو مكمّلة</h3>' + (t.related.length ? '<ul class="mth-links">' + t.related.map(function (x) { return tlink(x); }).join('') + '</ul>' : '<p class="muted">مفيش في المكتبة حالياً.</p>') + '</div>' +
       '<div><h3>بتفسّر بشكل مختلف</h3>' + (t.opposing.length ? '<ul class="mth-links opp">' + t.opposing.map(function (x) { return tlink(x); }).join('') + '</ul>' : '<p class="muted">مفيش نظرية في المكتبة حالياً بتعارضها بشكل مباشر.</p>') + '</div></div></section>';
-    h += '<section class="mth-sec mth-refs"><h2>المراجع الأساسية</h2>' + (unverified ? '<p class="mth-warn" role="note">' + H.ic('clock') + '<span>المراجع لسه متراجعتش من مصدرها. اتأكد من بيانات أي مرجع قبل ما تستشهد بيه.</span></p>' : '') +
-      '<ul>' + t.refs.map(function (r) { return '<li><span dir="ltr" lang="en">' + esc(r.authors) + ' (' + esc(r.year) + ').</span> <cite><bdi>' + esc(r.title) + '</bdi></cite>' + (r.verified ? '' : ' <span class="mth-unv">لسه متراجعش</span>') + '</li>'; }).join('') + '</ul></section>';
+    h += recentHtml(t) + refsHtml(t);
     h += '<nav class="mth-pager mth-noprint" aria-label="نظريات تانية">' + (prev ? '<a href="#theories/t/' + prev.id + '">' + H.ic('back') + '<span><small>اللي قبلها</small>' + esc(SHORT[prev.id]) + '</span></a>' : '<span></span>') +
       (next ? '<a class="nx" href="#theories/t/' + next.id + '"><span><small>اللي بعدها</small>' + esc(SHORT[next.id]) + '</span>' + H.ic('fwd') + '</a>' : '<span></span>') + '</nav></article>';
     main.innerHTML = h;

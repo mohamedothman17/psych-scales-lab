@@ -353,3 +353,29 @@
 .mth-msay{font-size:1.1rem;max-width:40em;font-weight:500}
 @media (max-width:860px){.mth-mhead{padding:22px}}
 .mth-abody .mth-act h3{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+/* recent evidence + checked references */
+.mth-recent ol{list-style:none;margin:16px 0 0;padding:0}
+.mth-recent li{padding:18px 0;border-top:1px solid var(--line-2);max-width:62em}
+.mth-rk{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 4px;font-weight:700}
+.mth-kind{padding:1px 12px;border-radius:6px;background:var(--ink);color:var(--bg);font-size:.88rem}
+.mth-arab{padding:0 10px;border:1.5px solid var(--status);color:var(--status);border-radius:6px;font-size:.86rem}
+.mth-rf{font-size:1.04rem;line-height:1.9;margin:0}
+.mth-rc{color:var(--ink-2);font-size:.92rem;margin:6px 0 0;text-align:start}
+.mth-ext{display:inline-flex;align-items:center;min-height:44px;font-weight:600;margin-inline-start:4px}
+.mth-refcount{display:flex;gap:10px;align-items:flex-start;padding:12px 16px;margin:0 0 12px;background:var(--warn-wash);border:1px solid var(--accent);border-radius:var(--r-m);font-weight:600;max-width:60em}
+.mth-refcount.all{background:var(--status-wash);border-color:var(--status)}
+.mth-refcount .ic{margin-top:.3em}
+.mth-venue{color:var(--ink-2)}
+.mth-doi{color:var(--ink-2);font-size:.9rem;overflow-wrap:anywhere}
+.mth-rstate{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin:2px 0 0;font-size:.92rem}
+.mth-okv{font-weight:600;color:var(--status)}
+.mth-rnote{margin:0;color:var(--ink-2);font-size:.9rem}
+.mth-howchk{margin-top:14px;border-top:1px solid var(--line-2);max-width:60em}
+.mth-howchk summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600;color:var(--link)}
+.mth-refs li,.mth-recent li{overflow-wrap:anywhere}
+.mth-refs li>span[dir=ltr],.mth-rc>span[dir=ltr]{display:block;text-align:left}
+.mth-venue,.mth-doi{display:block}
+.mth-venue[dir=auto]{text-align:start;unicode-bidi:plaintext}
+.mth-doi{text-align:left}
+.mth-rc .mth-ext{margin-inline-start:0}
