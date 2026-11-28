@@ -99,11 +99,12 @@
   /* Sections that live in their own files (hub/mod-<name>.js + .css) and load on first visit.
      A section file calls Hub.register(name, function (main, a, b) { ... }). Flip `ready` once the file ships. */
   var MODS = {
-    theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: false },
+    theories: { title: 'مكتبة النظريات', short: 'النظريات', say: 'كل نظرية بأدلتها ونقدها وأنشطتها', roles: null, ready: true },
     kids: { title: 'ألعاب وأنشطة الأطفال', short: 'الألعاب', say: 'ذاكرة، انتباه، استدلال، مرونة، إبداع', roles: ['parent', 'specialist'], ready: false },
     decide: { title: 'بحوث العمليات والقرار', short: 'القرار', say: 'توزيع العينة، الميزانية مقابل القوة، مقارنة البدائل', roles: ['researcher', 'student', 'specialist'], ready: false },
     explore: { title: 'مستكشف الأدبيات والفرص', short: 'الأدبيات', say: 'أبحاث بروابطها، وفرص متراجعة بتاريخها', roles: ['researcher', 'student', 'specialist'], ready: false },
-    assistant: { title: 'المساعد الذكي', short: 'المساعد', say: 'اسأله عن بحثك، أو خلّيه يشتغل معاك خطوة خطوة', roles: null, ready: false }
+    cases: { title: 'محاكي الأخصائي', short: 'الحالات', say: 'احكي الحالة، وخد فروض وخطة تتأكد بيها', roles: ['specialist'], ready: false },
+    assistant: { title: 'المساعد الذكي', short: 'المساعد', say: 'اسأله عن بحثك، أو خلّيه يشتغل معاك خطوة خطوة', roles: null, ready: true }
   };
   Object.keys(MODS).forEach(function (k) { if (MODS[k].ready) NAV.splice(NAV.length - 1, 0, [k, MODS[k].title, MODS[k].roles, MODS[k].short]); });
   var MOD_VIEWS = {}, MOD_LOADING = {};
@@ -1020,6 +1021,7 @@
     if (window.HubMotion) window.HubMotion.stop();
     touch.after = null;
     document.body.classList.remove('is-intro');
+    document.body.classList.toggle('on-assistant', r === 'assistant');
     if (MODS[r]) modView(r, parts[1], parts[2]); else V[r](parts[1], parts[2]);
     drawNav(r === 'project' ? 'projects' : r);
     document.title = BRAND + ' — منصة البحث وتنمية القدرات';
@@ -1054,6 +1056,19 @@
     state: function () { return S; }, save: save, esc: esc, $: $, $$: $$, toast: toast, ic: ic, field: field, sel: sel, opts: opts,
     uid: uid, today: today, plural: plural, calm: calm, labs: LABS, go: function (hash) { location.hash = hash; }
   };
+  /* Floating launcher: opens the assistant as a panel over the current page. */
+  (function () {
+    var fab = document.createElement('button');
+    fab.type = 'button'; fab.className = 'assist-fab'; fab.setAttribute('aria-label', 'افتح المساعد');
+    fab.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3-6.3-2.2 6.3-2.2z" fill="currentColor"/><circle cx="19" cy="5" r="1.6" fill="currentColor"/></svg><span>المساعد</span>';
+    fab.addEventListener('click', function () {
+      loadMod('assistant', function (ok) {
+        if (ok && window.HubAssistant && window.HubAssistant.open) window.HubAssistant.open({ context: { label: document.title, route: (location.hash || '#home').slice(1) } });
+        else location.hash = '#assistant';
+      });
+    });
+    document.body.appendChild(fab);
+  })();
   window.addEventListener('hashchange', go);
   route();
   setTimeout(function () { document.documentElement.classList.remove('boot'); }, 1800);
