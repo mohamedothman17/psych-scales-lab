@@ -907,3 +907,14 @@ html.lenis,html.lenis body{height:auto}
   .advice{background:#fff;border:1px solid var(--line-2)}
   .printout h1{margin-bottom:4px}
 }
+
+/* Assistant launcher */
+.assist-fab{position:fixed;inset-inline-end:20px;bottom:20px;z-index:30;display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 20px 0 16px;border:0;border-radius:999px;background:var(--nebula,linear-gradient(120deg,#6e3df9,#f61f6c,#fed325));color:#fff;font:600 1rem/1 var(--f-head,inherit);box-shadow:0 10px 30px rgba(110,61,249,.45);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease}
+.assist-fab svg{width:22px;height:22px}
+.assist-fab:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 14px 38px rgba(246,31,108,.45)}
+.assist-fab:active{transform:scale(.97)}
+.assist-fab:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+.is-intro .assist-fab,.on-assistant .assist-fab{display:none}
+@media (max-width:860px){.assist-fab{bottom:calc(76px + env(safe-area-inset-bottom));inset-inline-end:14px;min-height:48px;padding:0 14px}.assist-fab span{display:none}}
+@media (prefers-reduced-motion:reduce){.assist-fab{transition:none}}
+@media print{.assist-fab{display:none}}

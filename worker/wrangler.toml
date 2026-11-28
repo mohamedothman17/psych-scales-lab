@@ -1,0 +1,33 @@
+# Settings for the assistant's server. Deploy with:  npx wrangler deploy   (run inside the worker folder)
+name = "malaka-assistant"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+# Workers AI: the default model provider. Needs no key.
+[ai]
+binding = "AI"
+
+# Request counters. Create the namespace once (npx wrangler kv namespace create QUOTA),
+# paste the id it prints below, then remove the "#" from the three lines.
+# [[kv_namespaces]]
+# binding = "QUOTA"
+# id = "PASTE_THE_ID_HERE"
+
+[vars]
+ALLOWED_ORIGINS = "https://mohamedothman17.github.io"
+PROVIDER_ORDER = "gemini,workers-ai"
+WORKERS_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+GEMINI_MODEL = "gemini-flash-latest"
+CLAUDE_MODEL = "claude-opus-5-5"
+CLAUDE_CHECK_MODEL = "claude-haiku-5-5"
+ANON_DAILY = "15"
+USER_DAILY = "60"
+PER_MINUTE = "6"
+GLOBAL_DAILY = "400"
+MAX_OUTPUT_TOKENS = "800"
+FIREBASE_PROJECT_ID = ""
+
+# Secrets are never written in this file. Add them with:
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put QUOTA_SALT
