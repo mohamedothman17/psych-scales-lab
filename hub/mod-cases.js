@@ -43,7 +43,7 @@
     }
     return { s: out, map: map };
   }
-  var NEG = { test: function (b) { return /(?:^| )(?:مش|مب|لا|ولا|مفيش|مافيش|من غير|بطل|بطلت|محدش) $/.test(b) || (/(?:^| )ما $/.test(b) && !/(?:بعد|كل|اول|ساعه|قبل|زي|وقت|لحد|طول|لما|يوم|بدل) ما $/.test(b)); } };
+  var NEG = { test: function (b) { return /(?:^| )[وف]?(?:مش|مب|لا|مفيش|مافيش|من غير|بطل|بطلت|محدش) $/.test(b) || (/(?:^| )ما $/.test(b) && !/(?:بعد|كل|اول|ساعه|قبل|زي|وقت|لحد|طول|لما|يوم|بدل) ما $/.test(b)); } };
   function compile() {
     RX = K.LEX.map(function (e) {
       var loose = e[1] === 'set' || e[1] === 'who', src = normAr(e[3]).replace(/%/g, '(?:ب?[يتنا]|ب)');
@@ -53,7 +53,7 @@
   function slice(n, a, b) { return n.map.length && b > a ? String(n.src).slice(n.map[a], n.map[b - 1] + 1).trim() : ''; }
   var DUR = /(?:^| )(من(?:ذ)? (?:حوالي |تقريبا )?(?:\d+ )?(?:يومين|يوم|ايام|اسبوعين|اسبوع|اسابيع|شهرين|شهر|شهور|اشهر|سنتين|سنه|سنين|سنوات|ترم|زمان|وهو صغير|وهي صغيره|اول ما دخل\S*(?: \S+)?|ساعه ما(?: \S+){1,3}))/g;
   var FRQ = /(?:^| )((?:\d+ مرات|\d+ مره|مرتين|مره) (?:في|ف|كل) (?:اليوم|يوم|الاسبوع|اسبوع|الحصه|حصه|الشهر)|كل يوم|يوميا|كل حصه|كل اسبوع|على طول|طول الوقت|طول اليوم|دايما)/g;
-  var LIKE = /(?:^| )[وف]?(?:ب?[يت]حب|شاطر في|شاطره في|بيتبسط ب|بتتبسط ب|هوايته|هوايتها) ((?:ال)?[ء-ي]{3,}(?: و(?:ال)?[ء-ي]{3,})?)/g;
+  var LIKE = /(?:^| )[وف]?(?:ب?[يت]حب|شاطر في|شاطره في|بيتبسط ب|بتتبسط ب|هوايته|هوايتها) ((?:ال)?[ء-ي]{3,}(?: وال[ء-ي]{3,})?)/g;
   var AGE = /(?:عنده|عندها|عمره|عمرها|سنه|سنها) (\d{1,2}) (?:سنين|سنه|سنوات)/;
   function extract(text) {
     var n = norm(text), chips = [], deny = [], seen = {}, m; n.src = text;
@@ -226,10 +226,11 @@
   /* ---------- small view helpers ---------- */
   function paint(html, on) {
     main.innerHTML = '<div class="mcases">' + html + '</div>';
-    main.onclick = on && on.click ? function (e) { var t = e.target.closest('[data-act]'); if (t && main.contains(t)) on.click(t.getAttribute('data-act'), t, e); } : null;
-    main.onchange = on && on.change ? function (e) { on.change(e.target, e); } : null;
-    main.oninput = on && on.input ? function (e) { on.input(e.target, e); } : null;
-    main.onsubmit = on && on.submit ? function (e) { e.preventDefault(); on.submit(e.target, e); } : null;
+    function live() { if (main.firstElementChild && main.firstElementChild.classList.contains('mcases')) return true; main.onclick = main.onchange = main.oninput = main.onsubmit = null; return false; }
+    main.onclick = on && on.click ? function (e) { if (!live()) return; var t = e.target.closest('[data-act]'); if (t && main.contains(t)) on.click(t.getAttribute('data-act'), t, e); } : null;
+    main.onchange = on && on.change ? function (e) { if (live()) on.change(e.target, e); } : null;
+    main.oninput = on && on.input ? function (e) { if (live()) on.input(e.target, e); } : null;
+    main.onsubmit = on && on.submit ? function (e) { if (!live()) return; e.preventDefault(); on.submit(e.target, e); } : null;
   }
   function refocus(sel) { var el = sel && $(sel, main); if (el) el.focus({ preventScroll: true }); }
   function disclaimer() { return '<p class="mcases-truth">' + H.ic('guide') + '<span>الأداة دي بتساعدك تفكّر وتنظّم. مش بتشخّص ومش بتحكم على طفل، والقرار قرارك إنت كمتخصص.</span></p>'; }
@@ -303,6 +304,7 @@
       '<p class="small err" role="alert" id="in-err"></p><p class="mcases-end"><button class="btn primary big" type="submit">طلّع العناصر</button><a class="btn" href="#cases">إلغاء</a></p></div>' +
       '<aside class="mcases-live" aria-live="polite"><h2>اللي التقطناه لحد دلوقتي</h2><div id="mcases-live"><p class="muted">ابدأ اكتب، والعناصر هتظهر هنا. تقدر تعدّلها كلها بعدين.</p></div></aside></form>' + disclaimer();
     function live() {
+      if (!$('#in-narr')) return;
       var t = [$('#in-narr').value, $('#in-before').value, $('#in-after').value, $('#in-changes').value].join(' . '), r = extract(t), box = $('#mcases-live');
       $('#in-warn').textContent = /(?:^|\s)(?:اسمه|اسمها|اسم الطفل)\s/.test(t) ? 'شكلك كتبت اسم. امسحه واستخدم كود: الأسماء مش محتاجينها.' : '';
       if (!r.chips.length) { box.innerHTML = '<p class="muted">' + (t.replace(/[\s.]/g, '').length > 20 ? 'لسه مش لاقطين عناصر معروفة. كمّل، وهتقدر تضيف عناصر بإيدك في الخطوة الجاية.' : 'ابدأ اكتب، والعناصر هتظهر هنا. تقدر تعدّلها كلها بعدين.') + '</p>'; return; }
@@ -516,7 +518,7 @@
       body = '<h2>ورقة تسجيل: ' + esc(p.t) + '</h2><p>كود الحالة: ' + esc(c.code) + ' · المدة: ' + p.days + ' يوم · اللي بيسجّل: ____________</p><p class="small">' + esc(p.limits) + '</p><h3>هتسجّل إيه</h3><ul>' + p.rec.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul><table class="mcases-sheet"><thead><tr>' + p.sheet.map(function (s) { return '<th>' + esc(s) + '</th>'; }).join('') + '</tr></thead><tbody>' + new Array(13).join('<tr>' + p.sheet.map(function () { return '<td></td>'; }).join('') + '</tr>') + '</tbody></table><h3>جدول القرار</h3><table class="mcases-sumt"><thead><tr><th>لو لقيت</th><th>يبقى</th></tr></thead><tbody>' + p.rows.map(function (r) { return '<tr><td>' + esc(r.f) + '</td><td>' + (Object.keys(r.e).map(function (k) { return '«' + esc(byId(K.HYPS, k).t) + '» ' + (r.e[k] > 0 ? 'أقوى' : 'أضعف'); }).join('، ') || 'ما بتغيّرش العدّ') + '. ' + esc(r.s) + '</td></tr>'; }).join('') + '</tbody></table>';
     } else if ((kind === 'progress' || kind === 'family') && window.HubCasesProgress) { body = window.HubCasesProgress(API).report(c, kind); back = '#cases/c/' + c.id + '.sess'; }
     else body = summaryHtml(c);
-    paint('<p class="row mcases-pbar"><a class="btn" href="' + back + '">رجوع</a><button class="btn primary" type="button" data-act="print">' + H.ic('print') + 'اطبع</button></p><div class="printout mcases-print">' + body + '<p class="small mcases-pfoot">اتعمل على منصة مَلَكة. أداة مساعدة للأخصائي، مش تشخيص.</p></div>', { click: function (act) { if (act === 'print') window.print(); } });
+    paint('<p class="row mcases-pbar"><a class="btn" href="' + back + '">رجوع</a><button class="btn primary" type="button" data-act="print">' + H.ic('print') + 'اطبع</button></p><div class="printout mcases-print">' + body + '<p class="small mcases-pfoot">' + (kind === 'family' ? 'اتعمل على منصة مَلَكة.' : 'اتعمل على منصة مَلَكة. أداة مساعدة للأخصائي، مش تشخيص.') + '</p></div>', { click: function (act) { if (act === 'print') window.print(); } });
   }
 
   /* ---------- training ---------- */

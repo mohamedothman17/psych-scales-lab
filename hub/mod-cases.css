@@ -275,7 +275,7 @@ button.mcases-cell:focus-visible{outline:2px solid var(--focus);outline-offset:2
 .mcases-danger{margin-top:40px;padding-top:20px;border-top:1px solid var(--line)}
 .mcases-danger h2{font-size:1rem;margin-bottom:10px}
 .mcases-pbar{margin-bottom:20px}
-.mcases-print{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:32px;max-width:900px}
+.mcases-print{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:32px;max-width:900px}
 .mcases-print h2{font-size:1.5rem}
 .mcases-print h3{margin-top:22px;padding-bottom:4px;border-bottom:1px solid var(--line)}
 .mcases-print ul,.mcases-print ol{padding-inline-start:22px}
@@ -347,7 +347,7 @@ button.mcases-cell:focus-visible{outline:2px solid var(--focus);outline-offset:2
 .mcases-nextup{padding:22px 24px;border-radius:28px 8px 28px 28px;background:var(--violet);color:#fff}
 .mcases-nextup h3{font-size:1.3rem;font-weight:800}
 .mcases-nextup ul{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:8px}
-.mcases-nextup li{padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.14)}
+.mcases-nextup li{padding:10px 14px;border-radius:12px;background:rgba(12,3,44,.22)}
 .mcases-nextup .muted{color:#fff}
 .mcases-gf .mcases-an{margin-top:12px}
 .mcases-an label{display:flex;gap:8px;align-items:baseline}
